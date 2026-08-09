@@ -138,6 +138,6 @@ Project Link: [https://github.com/your-username/StreetClean](https://github.com/
 
 <div align="center">
 
-Made with ❤️ by **Your Name**
+Made with ❤️ by Hackathon Larpers
 
 </div>
