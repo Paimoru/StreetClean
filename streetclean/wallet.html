@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreetClean — Wallet</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header" id="app-header"></header>
+
+  <main>
+    <span class="eyebrow">Earn</span>
+    <h1>Your wallet</h1>
+    <p class="subtitle">Every verified cleanup pays out here.</p>
+
+    <div class="wallet-hero">
+      <div class="eyebrow" style="color:#bfe6ee;">Available balance</div>
+      <div class="amount" id="balance">₱0</div>
+    </div>
+
+    <h2>Transaction history</h2>
+    <div class="card" id="txns"></div>
+
+    <button class="btn btn-outline btn-block" style="margin-top:16px;" onclick="reset()">Reset demo data</button>
+  </main>
+
+  <nav class="bottom-nav" id="app-nav"></nav>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderShell("wallet");
+
+  function render() {
+    document.getElementById("balance").textContent = "₱" + DB.getWalletBalance();
+    const txns = DB.getTransactions();
+    const el = document.getElementById("txns");
+
+    if (txns.length === 0) {
+      el.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="glyph">💸</div>No payouts yet — verify a cleanup to earn.</div>`;
+      return;
+    }
+
+    el.innerHTML = txns
+      .map(
+        (x) => `
+      <div class="txn-row">
+        <span>${x.taskTitle}</span>
+        <span class="txn-amount">+₱${x.amount}</span>
+      </div>`
+      )
+      .join("");
+  }
+
+  function reset() {
+    DB.resetDemoData();
+    showToast("Demo data reset");
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>

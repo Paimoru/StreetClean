@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreetClean — Home</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header" id="app-header"></header>
+
+  <main>
+    <span class="eyebrow">Ibalong Festival 2026 · Legazpi City</span>
+    <h1>Turn litter into a paid mission.</h1>
+    <p class="subtitle">Report a dirty spot, claim a cleanup, get verified, get paid.</p>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num" id="stat-open">0</div>
+        <div class="label">Open</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="stat-mine">0</div>
+        <div class="label">My Tasks</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="stat-wallet">₱0</div>
+        <div class="label">Earned</div>
+      </div>
+    </div>
+
+    <h2>Recent reports</h2>
+    <div id="feed"></div>
+  </main>
+
+  <nav class="bottom-nav" id="app-nav"></nav>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderShell("home");
+
+  function renderFeed() {
+    const tasks = DB.getTasks().slice(0, 6);
+    document.getElementById("stat-open").textContent = DB.getOpenTasks().length;
+    document.getElementById("stat-mine").textContent = DB.getMyTasks().length;
+    document.getElementById("stat-wallet").textContent = "₱" + DB.getWalletBalance();
+
+    const feed = document.getElementById("feed");
+    if (tasks.length === 0) {
+      feed.innerHTML = `<div class="empty-state"><div class="glyph">🧹</div>No reports yet. Be the first to spot something.</div>`;
+      return;
+    }
+
+    feed.innerHTML = tasks
+      .map(
+        (t) => `
+      <div class="card task-card">
+        ${t.status === "verified" ? `<div class="seal"><span class="check">✓</span>VERIFIED</div>` : ""}
+        <div class="task-photo">
+          ${t.photoBefore ? `<img src="${t.photoBefore}" alt="">` : `<span style="font-size:34px;">📍</span>`}
+        </div>
+        <div class="task-body">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">${t.reporter} · ${timeAgo(t.createdAt)}</div>
+          <div class="task-desc">${t.description}</div>
+          <div class="task-footer">
+            <span class="bounty">₱${t.bounty}</span>
+            ${badgeFor(t.status)}
+          </div>
+        </div>
+      </div>`
+      )
+      .join("");
+  }
+
+  renderFeed();
+</script>
+</body>
+</html>

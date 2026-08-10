@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreetClean — Browse Commissions</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header" id="app-header"></header>
+
+  <main>
+    <span class="eyebrow">Step 2 of 5</span>
+    <h1>Open commissions</h1>
+    <p class="subtitle">Claim one, clean it, submit proof, get paid.</p>
+
+    <div id="list"></div>
+  </main>
+
+  <nav class="bottom-nav" id="app-nav"></nav>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderShell("commissions");
+
+  function render() {
+    const tasks = DB.getOpenTasks();
+    const list = document.getElementById("list");
+
+    if (tasks.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="glyph">✨</div>Nothing open right now — every spot is covered.</div>`;
+      return;
+    }
+
+    list.innerHTML = tasks
+      .map(
+        (t) => `
+      <div class="card task-card">
+        <div class="task-photo">
+          ${t.photoBefore ? `<img src="${t.photoBefore}" alt="">` : `<span style="font-size:34px;">📍</span>`}
+        </div>
+        <div class="task-body">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">${t.reporter} · ${timeAgo(t.createdAt)}</div>
+          <div class="task-desc">${t.description}</div>
+          <div class="task-footer">
+            <span class="bounty">₱${t.bounty}</span>
+            <button class="btn btn-primary" onclick="claim('${t.id}')">Claim this</button>
+          </div>
+        </div>
+      </div>`
+      )
+      .join("");
+  }
+
+  function claim(id) {
+    DB.claimTask(id);
+    showToast("Claimed! Head to My Tasks when it's cleaned.");
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>

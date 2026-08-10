@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StreetClean — Log In</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header">
+    <a class="brand" href="index.html">
+      <svg class="mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="46" stroke="white" stroke-width="6"/>
+        <path d="M50 20 L58 45 L50 40 L42 45 Z M50 40 L50 78" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      StreetClean
+    </a>
+  </header>
+
+  <main>
+    <span class="eyebrow">Welcome back</span>
+    <h1>Log in</h1>
+    <p class="subtitle">Continue reporting, cleaning, or verifying.</p>
+
+    <form id="login-form" class="card">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="text" id="email" required />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="text" id="password" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Log in</button>
+      <p id="error-msg" style="color:#b3402f; font-size:13px; margin-top:10px; display:none;"></p>
+    </form>
+
+    <p class="subtitle" style="text-align:center;">
+      No account yet? <a href="register.html" style="color:var(--teal); font-weight:700;">Sign up</a>
+    </p>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("submit-btn");
+    const errorMsg = document.getElementById("error-msg");
+    errorMsg.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+
+    try {
+      await AuthModule.loginUser(
+        document.getElementById("email").value,
+        document.getElementById("password").value
+      );
+      window.location.href = "index.html";
+    } catch (err) {
+      errorMsg.textContent = err.message;
+      errorMsg.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Log in";
+    }
+  });
+</script>
+</body>
+</html>
