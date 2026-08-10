@@ -58,7 +58,7 @@
 
 | Category | Technology |
 |----------|------------|
-| Frontend | |
+| Frontend | |FIGMA
 | Backend  | |
 | Database | |
 | Other    | |
