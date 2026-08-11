@@ -233,9 +233,12 @@ class StateManager {
     localStorage.setItem('streetclean_active_user_id', this.currentUserId);
   }
 
-  // Get active logged-in user
+  // Get active logged-in user (returns null if logged out — do NOT fall
+  // back to a random stored account, or the auth gate in app.js will think
+  // someone is still logged in after they've signed out)
   getUser() {
-    return this.users[this.currentUserId] || Object.values(this.users)[0];
+    if (!this.currentUserId) return null;
+    return this.users[this.currentUserId] || null;
   }
 
   // Get all registered accounts list
