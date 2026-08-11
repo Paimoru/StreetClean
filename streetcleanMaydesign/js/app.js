@@ -194,6 +194,19 @@ window.switchRole = (roleKey) => {
   window.renderRoute();
 };
 
+// Log Out — signs out of Firebase; the onAuthStateChanged listener below
+// picks up the change, clears the local session, and redirects to #/auth.
+window.logoutUser = async () => {
+  if (!confirm('Log out of StreetClean?')) return;
+  try {
+    await auth.signOut();
+    window.soundSystem.click();
+    window.showToast('Signed out. See you next cleanup!', 'success');
+  } catch (err) {
+    window.showToast('Could not sign out. Please try again.', 'error');
+  }
+};
+
 // Quick Switch User Account
 window.switchUser = (userId) => {
   const success = window.appState.switchUser(userId);
