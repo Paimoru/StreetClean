@@ -331,7 +331,7 @@ window.AuthView = {
     window.renderRoute();
   },
 
-  handleLogin() {
+  async handleLogin() {
     const idInput = document.getElementById('login-identifier');
     const passInput = document.getElementById('login-password');
     const identifier = idInput ? idInput.value : '';
@@ -341,7 +341,7 @@ window.AuthView = {
       window.showToast('Please enter your email or mobile number.', 'error');
       return;
     }
-
+    window.showToast('Signing in...', 'success');
     const result = window.appState.loginUser(identifier, password);
     if (result.success) {
       window.soundSystem.success();
