@@ -136,6 +136,7 @@ window.updateHeaderUserChip = () => {
   });
 };
 
+
 // Modal Engine
 window.openModal = (contentHtml) => {
   const backdrop = document.getElementById('global-modal-backdrop');
