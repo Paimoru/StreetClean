@@ -1,6 +1,7 @@
 /**
  * StreetClean | Ibalong Festival 2026 (Legazpi City)
  * Clean, Friendly & Streamlined Home View Component (White & Green Aesthetic)
+ * Role selection directs to dedicated login/workspace for Cleaner, Resident, Verifier.
  */
 
 window.HomeView = {
@@ -53,67 +54,88 @@ window.HomeView = {
             </div>
           </div>
 
-          <!-- Section: Select Your Role -->
+          <!-- Section: Create Account First / Log In by Role -->
           <div style="margin-bottom: 1.5rem;">
             <div style="text-align: center; margin-bottom: 1rem;">
-              <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">How Would You Like to Help?</h2>
-              <p style="font-size: 0.82rem; color: #64748b;">Select a role to start participating in the festival cleanup.</p>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: var(--radius-full); margin-bottom: 6px;">
+                <span style="font-size: 0.74rem; font-weight: 800; color: var(--emerald-800); text-transform: uppercase;">Step 1: Pick What Role & Create Account</span>
+              </div>
+              <h2 style="font-size: 1.18rem; font-weight: 800; color: #0f172a;">Join StreetClean by Role</h2>
+              <p style="font-size: 0.82rem; color: #64748b;">Create your account first, choose your role, or log in to an existing profile.</p>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
               
-              <!-- Resident Role Card -->
-              <div class="card ${user.role === 'resident' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff;" onclick="window.switchRole('resident')">
-                <div>
-                  <div style="width: 46px; height: 46px; border-radius: var(--radius-full); background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto;">
-                    <i class="fa-solid fa-camera"></i>
-                  </div>
-                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">Resident</h3>
-                  <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin-bottom: 1rem;">
-                    Spot litter during festival activities and pin the location for local cleaners.
-                  </p>
-                </div>
-                <button class="btn btn-sm ${user.role === 'resident' ? 'btn-primary' : 'btn-secondary'}" style="width: 100%; border-radius: var(--radius-full);">
-                  ${user.role === 'resident' ? '<i class="fa-solid fa-check"></i> Active Role' : 'Select Resident'}
-                </button>
-              </div>
-
               <!-- Cleaner Role Card -->
-              <div class="card ${user.role === 'cleaner' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff;" onclick="window.switchRole('cleaner')">
+              <div class="card ${user.role === 'cleaner' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff; border: 2px solid ${user.role === 'cleaner' ? 'var(--emerald-500)' : '#e2e8f0'};">
                 <div>
-                  <div style="width: 46px; height: 46px; border-radius: var(--radius-full); background: #dcfce7; color: var(--emerald-600); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto;">
+                  <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: #dcfce7; color: var(--emerald-600); display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 0.75rem auto;">
                     <i class="fa-solid fa-broom"></i>
                   </div>
-                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">Cleaner</h3>
+                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">🧹 Cleaner</h3>
+                  <div style="font-size: 0.68rem; font-weight: 800; color: var(--emerald-700); text-transform: uppercase; margin-bottom: 6px;">Earn ₱ Cash Bounties</div>
                   <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin-bottom: 1rem;">
-                    Pick up reported cleanup tasks, clear the area, and upload before/after photos.
+                    Pick up reported cleanup tasks, sweep streets, and earn instant ₱ GCash payouts.
                   </p>
                 </div>
-                <button class="btn btn-sm ${user.role === 'cleaner' ? 'btn-primary' : 'btn-secondary'}" style="width: 100%; border-radius: var(--radius-full);">
-                  ${user.role === 'cleaner' ? '<i class="fa-solid fa-check"></i> Active Role' : 'Select Cleaner'}
-                </button>
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
+                  <button class="btn btn-sm btn-primary" style="width: 100%; border-radius: var(--radius-full);" onclick="window.AuthView.openCreateAccountWithRole('cleaner')">
+                    <i class="fa-solid fa-user-plus"></i> Create Cleaner Account
+                  </button>
+                  <button class="btn btn-sm btn-secondary" style="width: 100%; border-radius: var(--radius-full); font-size: 0.72rem;" onclick="window.loginAsRoleDirect('cleaner')">
+                    ${user.role === 'cleaner' ? '<i class="fa-solid fa-check"></i> Logged In as Maria' : 'Log In as Cleaner'}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Resident Role Card -->
+              <div class="card ${user.role === 'resident' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff; border: 2px solid ${user.role === 'resident' ? '#0284c7' : '#e2e8f0'};">
+                <div>
+                  <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 0.75rem auto;">
+                    <i class="fa-solid fa-camera"></i>
+                  </div>
+                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">📸 Resident</h3>
+                  <div style="font-size: 0.68rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">Report & Pledge</div>
+                  <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin-bottom: 1rem;">
+                    Spot litter during festival activities, tag GPS coordinates, and pledge cleanup bounties.
+                  </p>
+                </div>
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
+                  <button class="btn btn-sm btn-primary" style="width: 100%; border-radius: var(--radius-full);" onclick="window.AuthView.openCreateAccountWithRole('resident')">
+                    <i class="fa-solid fa-user-plus"></i> Create Resident Account
+                  </button>
+                  <button class="btn btn-sm btn-secondary" style="width: 100%; border-radius: var(--radius-full); font-size: 0.72rem;" onclick="window.loginAsRoleDirect('resident')">
+                    ${user.role === 'resident' ? '<i class="fa-solid fa-check"></i> Logged In as Juan' : 'Log In as Resident'}
+                  </button>
+                </div>
               </div>
 
               <!-- Verifier Role Card -->
-              <div class="card ${user.role === 'verifier' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff;" onclick="window.switchRole('verifier')">
+              <div class="card ${user.role === 'verifier' ? 'card-gold-glow' : ''}" style="padding: 1.25rem 1rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: #ffffff; border: 2px solid ${user.role === 'verifier' ? '#b45309' : '#e2e8f0'};">
                 <div>
-                  <div style="width: 46px; height: 46px; border-radius: var(--radius-full); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto;">
+                  <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 0.75rem auto;">
                     <i class="fa-solid fa-shield-halved"></i>
                   </div>
-                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">Verifier</h3>
+                  <h3 style="font-size: 1rem; margin-bottom: 4px; color: #0f172a;">🛡️ Verifier</h3>
+                  <div style="font-size: 0.68rem; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 6px;">Audit & Payout</div>
                   <p style="font-size: 0.78rem; color: #64748b; line-height: 1.45; margin-bottom: 1rem;">
-                    Inspect photo proofs submitted by cleaners and approve completed work.
+                    Inspect photo proofs submitted by cleaners and authorize instant escrow cashouts.
                   </p>
                 </div>
-                <button class="btn btn-sm ${user.role === 'verifier' ? 'btn-primary' : 'btn-secondary'}" style="width: 100%; border-radius: var(--radius-full);">
-                  ${user.role === 'verifier' ? '<i class="fa-solid fa-check"></i> Active Role' : 'Select Verifier'}
-                </button>
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
+                  <button class="btn btn-sm btn-primary" style="width: 100%; border-radius: var(--radius-full);" onclick="window.AuthView.openCreateAccountWithRole('verifier')">
+                    <i class="fa-solid fa-user-plus"></i> Create Verifier Account
+                  </button>
+                  <button class="btn btn-sm btn-secondary" style="width: 100%; border-radius: var(--radius-full); font-size: 0.72rem;" onclick="window.loginAsRoleDirect('verifier')">
+                    ${user.role === 'verifier' ? '<i class="fa-solid fa-check"></i> Logged In as Carlo' : 'Log In as Verifier'}
+                  </button>
+                </div>
               </div>
 
             </div>
           </div>
 
-          <!-- Simple Interactive Festival Map Shortcut (Clean White & Emerald) -->
+          <!-- Festival Map Shortcut -->
           <div class="card" style="padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: #ffffff; border: 1px solid #bbf7d0;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <div style="width: 42px; height: 42px; border-radius: var(--radius-md); background: #dcfce7; color: var(--emerald-700); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">

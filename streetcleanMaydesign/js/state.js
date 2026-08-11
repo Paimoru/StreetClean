@@ -1,7 +1,7 @@
 /**
  * StreetClean | Ibalong Festival 2026 (Legazpi City)
  * Central Reactive State Engine
- * Supports Multiple Real User Accounts, Registration, Login & Role Switching.
+ * Supports Multi-User Accounts, Real-Time Wallet / Deposit / Cashout Engine, Legazpi Hotspots & Proofs.
  */
 
 const DEFAULT_ACCOUNTS = {
@@ -18,6 +18,10 @@ const DEFAULT_ACCOUNTS = {
     phone: '0928-551-3941',
     payoutProvider: 'GCash',
     payoutAccount: '0928-551-3941',
+    paymentMethods: [
+      { id: 'pm_gcash', provider: 'GCash', account: '0928-551-3941', isDefault: true },
+      { id: 'pm_maya', provider: 'Maya', account: '0928-551-3941', isDefault: false }
+    ],
     phpBalance: 4850.00,
     cleanPoints: 12400,
     stakedPoints: 5000,
@@ -51,6 +55,10 @@ const DEFAULT_ACCOUNTS = {
     phone: '0917-882-1920',
     payoutProvider: 'Maya',
     payoutAccount: '0917-882-1920',
+    paymentMethods: [
+      { id: 'pm_maya', provider: 'Maya', account: '0917-882-1920', isDefault: true },
+      { id: 'pm_gcash', provider: 'GCash', account: '0917-882-1920', isDefault: false }
+    ],
     phpBalance: 2500.00,
     cleanPoints: 3450,
     stakedPoints: 1000,
@@ -82,6 +90,9 @@ const DEFAULT_ACCOUNTS = {
     phone: '0919-440-2026',
     payoutProvider: 'LandBank',
     payoutAccount: 'LB-0482-1192',
+    paymentMethods: [
+      { id: 'pm_lb', provider: 'LandBank', account: 'LB-0482-1192', isDefault: true }
+    ],
     phpBalance: 9800.00,
     cleanPoints: 21000,
     stakedPoints: 8000,
@@ -116,7 +127,7 @@ const DEFAULT_FESTIVAL_HOTSPOTS = [
     rewardPhp: 850.00,
     cleanPoints: 1400,
     estimatedWeightKg: 45,
-    deadline: '6 hours left (Before Evening Street Dance)',
+    deadline: '6 hours left',
     status: 'open',
     reportedBy: 'Juan Santos',
     reportedAt: '1 hour ago',
@@ -241,7 +252,7 @@ const DEFAULT_FESTIVAL_HOTSPOTS = [
 
 const DEFAULT_TRANSACTIONS = [
   {
-    id: 'TX-PH-9921',
+    id: 'TX-PH-9950',
     type: 'bounty_payout',
     title: 'Bounty Reward: Sawangan Park Cleanup',
     reference: 'SC-2026-05',
@@ -250,7 +261,37 @@ const DEFAULT_TRANSACTIONS = [
     status: 'completed',
     date: 'Aug 11, 2026',
     time: '11:30 AM',
-    channel: 'GCash Instant Payout'
+    channel: 'GCash Instant Payout',
+    recipient: 'Maria Bataller (0928-551-3941)',
+    feePhp: 0.00
+  },
+  {
+    id: 'TX-PH-9915',
+    type: 'withdrawal',
+    title: 'GCash Instant Cashout to 0928-551-3941',
+    reference: 'WD-GCASH-9915',
+    amountPhp: -1500.00,
+    points: 0,
+    status: 'completed',
+    date: 'Aug 11, 2026',
+    time: '09:15 AM',
+    channel: 'GCash Instant Transfer',
+    recipient: 'Maria Bataller (0928-551-3941)',
+    feePhp: 0.00
+  },
+  {
+    id: 'TX-PH-9880',
+    type: 'bounty_payout',
+    title: 'Bounty Reward: Peñaranda Grandstand',
+    reference: 'SC-2026-01',
+    amountPhp: 850.00,
+    points: 1400,
+    status: 'completed',
+    date: 'Aug 10, 2026',
+    time: '06:45 PM',
+    channel: 'GCash Instant Payout',
+    recipient: 'Eduardo Ramos (0917-223-9981)',
+    feePhp: 0.00
   },
   {
     id: 'TX-PH-9840',
@@ -262,19 +303,65 @@ const DEFAULT_TRANSACTIONS = [
     status: 'completed',
     date: 'Aug 10, 2026',
     time: '04:15 PM',
-    channel: 'GCash Instant Payout'
+    channel: 'GCash Instant Payout',
+    recipient: 'Maria Bataller (0928-551-3941)',
+    feePhp: 0.00
+  },
+  {
+    id: 'TX-PH-9795',
+    type: 'bounty_pledge',
+    title: 'Civic Bounty Pledge: Legazpi Boulevard',
+    reference: 'SC-2026-02',
+    amountPhp: -100.00,
+    points: 25,
+    status: 'completed',
+    date: 'Aug 10, 2026',
+    time: '01:20 PM',
+    channel: 'Civic Bounty Escrow',
+    recipient: 'Boulevard Cleaner Bounty Pool',
+    feePhp: 0.00
   },
   {
     id: 'TX-PH-9710',
     type: 'withdrawal',
-    title: 'GCash Cashout to 0928-551-3941',
-    reference: 'WD-GCASH-88',
+    title: 'Maya Wallet Cashout to 0917-882-1920',
+    reference: 'WD-MAYA-8819',
     amountPhp: -2000.00,
     points: 0,
     status: 'completed',
     date: 'Aug 09, 2026',
     time: '07:00 PM',
-    channel: 'GCash'
+    channel: 'Maya Express Transfer',
+    recipient: 'Juan Santos (0917-882-1920)',
+    feePhp: 0.00
+  },
+  {
+    id: 'TX-PH-9650',
+    type: 'deposit',
+    title: 'Civic Wallet Top-Up via GCash Express',
+    reference: 'DP-GCASH-4421',
+    amountPhp: 1000.00,
+    points: 100,
+    status: 'completed',
+    date: 'Aug 09, 2026',
+    time: '03:10 PM',
+    channel: 'GCash Express Pay',
+    recipient: 'Civic Bounty Escrow Pool',
+    feePhp: 0.00
+  },
+  {
+    id: 'TX-PH-9590',
+    type: 'bounty_payout',
+    title: 'Bounty Reward: Albay Astrodome Arena',
+    reference: 'SC-2026-03',
+    amountPhp: 1200.00,
+    points: 1800,
+    status: 'completed',
+    date: 'Aug 08, 2026',
+    time: '11:50 PM',
+    channel: 'GCash Instant Payout',
+    recipient: 'Maria Bataller (0928-551-3941)',
+    feePhp: 0.00
   }
 ];
 
@@ -286,39 +373,35 @@ class StateManager {
   }
 
   initData() {
-    const savedCommissions = localStorage.getItem('streetclean_commissions_v3');
+    const savedCommissions = localStorage.getItem('streetclean_commissions_v5');
     this.commissions = savedCommissions ? JSON.parse(savedCommissions) : DEFAULT_FESTIVAL_HOTSPOTS;
 
-    const savedUsers = localStorage.getItem('streetclean_users_v3');
+    const savedUsers = localStorage.getItem('streetclean_users_v5');
     this.users = savedUsers ? JSON.parse(savedUsers) : DEFAULT_ACCOUNTS;
 
-    // Ensure current active user exists
     if (!this.users[this.currentUserId]) {
       this.currentUserId = Object.keys(this.users)[0] || 'usr_cleaner_01';
     }
 
-    const savedTx = localStorage.getItem('streetclean_transactions_v3');
+    const savedTx = localStorage.getItem('streetclean_transactions_v5');
     this.transactions = savedTx ? JSON.parse(savedTx) : DEFAULT_TRANSACTIONS;
   }
 
   save() {
-    localStorage.setItem('streetclean_commissions_v3', JSON.stringify(this.commissions));
-    localStorage.setItem('streetclean_users_v3', JSON.stringify(this.users));
-    localStorage.setItem('streetclean_transactions_v3', JSON.stringify(this.transactions));
+    localStorage.setItem('streetclean_commissions_v5', JSON.stringify(this.commissions));
+    localStorage.setItem('streetclean_users_v5', JSON.stringify(this.users));
+    localStorage.setItem('streetclean_transactions_v5', JSON.stringify(this.transactions));
     localStorage.setItem('streetclean_active_user_id', this.currentUserId);
   }
 
-  // Get active logged-in user
   getUser() {
     return this.users[this.currentUserId] || Object.values(this.users)[0];
   }
 
-  // Get all registered accounts list
   getAllUsersList() {
     return Object.values(this.users);
   }
 
-  // Register a brand new real user account
   registerUser(data) {
     const newId = `usr_${Date.now()}`;
     const roleTitles = {
@@ -340,7 +423,10 @@ class StateManager {
       phone: data.phone || '0917-000-0000',
       payoutProvider: data.payoutProvider || 'GCash',
       payoutAccount: data.payoutAccount || data.phone || '0917-000-0000',
-      phpBalance: 500.00, // ₱500 Welcome Civic Grant!
+      paymentMethods: [
+        { id: 'pm_def', provider: data.payoutProvider || 'GCash', account: data.phone || '0917-000-0000', isDefault: true }
+      ],
+      phpBalance: 500.00,
       cleanPoints: 250,
       stakedPoints: 0,
       escrowLockedPhp: 0.00,
@@ -367,12 +453,10 @@ class StateManager {
     return newUser;
   }
 
-  // Log in with email / phone & password
   loginUser(identifier, password) {
     const cleanId = identifier.trim().toLowerCase();
     const allUsers = Object.values(this.users);
     
-    // Find matching user
     const foundUser = allUsers.find(u => 
       u.email.toLowerCase() === cleanId || 
       u.phone.replace(/[^0-9]/g, '') === cleanId.replace(/[^0-9]/g, '')
@@ -393,7 +477,6 @@ class StateManager {
     return { success: true, user: foundUser };
   }
 
-  // Switch to an existing account by ID
   switchUser(userId) {
     if (this.users[userId]) {
       this.currentUserId = userId;
@@ -405,12 +488,10 @@ class StateManager {
     return false;
   }
 
-  // Switch active role (switches to a user with that role or updates current user's role)
   setUserRole(roleKey) {
     const user = this.getUser();
     if (user.role === roleKey) return;
 
-    // Check if another account exists with this role for easy testing
     const matchingUser = Object.values(this.users).find(u => u.role === roleKey);
     if (matchingUser) {
       this.currentUserId = matchingUser.id;
@@ -438,6 +519,102 @@ class StateManager {
 
   getTransactions() {
     return this.transactions;
+  }
+
+  getTransactionById(id) {
+    return this.transactions.find(t => t.id === id);
+  }
+
+  // DEPOSIT / TOP-UP FUNDS TO WALLET (Residents & Sponsors)
+  depositFunds(amount, provider = 'GCash', account = '0917-882-1920') {
+    amount = parseFloat(amount);
+    if (isNaN(amount) || amount <= 0) return { success: false, message: 'Invalid deposit amount' };
+
+    const user = this.getUser();
+    user.phpBalance += amount;
+    const earnedPoints = Math.round(amount * 0.1);
+    user.cleanPoints += earnedPoints;
+
+    const refId = `DP-${provider.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const txId = `TX-PH-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newTx = {
+      id: txId,
+      type: 'deposit',
+      title: `Civic Wallet Top-Up via ${provider}`,
+      reference: refId,
+      amountPhp: amount,
+      points: earnedPoints,
+      status: 'completed',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      channel: `${provider} Instant Pay`,
+      recipient: `${user.name} (${account})`,
+      feePhp: 0.00
+    };
+
+    this.transactions.unshift(newTx);
+    this.save();
+    this.emit('stateChanged');
+    return { success: true, transaction: newTx, newBalance: user.phpBalance };
+  }
+
+  // WITHDRAW / CASHOUT FUNDS (Cleaners & Verifiers)
+  withdraw(amount, provider = 'GCash', account = '0928-551-3941') {
+    amount = parseFloat(amount);
+    const user = this.getUser();
+
+    if (isNaN(amount) || amount <= 0) {
+      return { success: false, message: 'Invalid cashout amount' };
+    }
+
+    if (user.phpBalance < amount) {
+      return { success: false, message: 'Insufficient wallet balance' };
+    }
+
+    user.phpBalance -= amount;
+    const refId = `WD-${provider.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const txId = `TX-PH-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newTx = {
+      id: txId,
+      type: 'withdrawal',
+      title: `${provider} Cashout to ${account}`,
+      reference: refId,
+      amountPhp: -amount,
+      points: 0,
+      status: 'completed',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      channel: `${provider} Instant Transfer`,
+      recipient: `${user.name} (${account})`,
+      feePhp: 0.00
+    };
+
+    this.transactions.unshift(newTx);
+    this.save();
+    this.emit('stateChanged');
+    return { success: true, transaction: newTx, newBalance: user.phpBalance };
+  }
+
+  // ADD / UPDATE PAYMENT METHOD
+  addPaymentMethod(provider, account) {
+    const user = this.getUser();
+    if (!user.paymentMethods) user.paymentMethods = [];
+    
+    const newPm = {
+      id: `pm_${Date.now()}`,
+      provider: provider,
+      account: account,
+      isDefault: user.paymentMethods.length === 0
+    };
+
+    user.paymentMethods.push(newPm);
+    user.payoutProvider = provider;
+    user.payoutAccount = account;
+    this.save();
+    this.emit('stateChanged');
+    return newPm;
   }
 
   // Create new incident report in Legazpi City
@@ -471,7 +648,6 @@ class StateManager {
 
     this.commissions.unshift(newCommission);
 
-    // If resident pledged from wallet
     if (reportData.fundingSource === 'wallet' && user.phpBalance >= newCommission.rewardPhp) {
       user.phpBalance -= newCommission.rewardPhp;
       user.escrowLockedPhp += newCommission.rewardPhp;
@@ -485,7 +661,9 @@ class StateManager {
         status: 'completed',
         date: 'Today',
         time: 'Just now',
-        channel: 'Resident Civic Wallet'
+        channel: 'Resident Civic Wallet',
+        recipient: 'Ibalong Escrow Contract',
+        feePhp: 0.00
       });
     }
 
@@ -495,7 +673,6 @@ class StateManager {
     return newCommission;
   }
 
-  // Claim commission (Cleaner Flow)
   claimCommission(id) {
     const comm = this.getCommissionById(id);
     const user = this.getUser();
@@ -511,7 +688,6 @@ class StateManager {
     return false;
   }
 
-  // Submit Proof of Work (Cleaner Flow)
   submitProof(id, proof) {
     const comm = this.getCommissionById(id);
     if (comm) {
@@ -534,7 +710,6 @@ class StateManager {
     return false;
   }
 
-  // Verify and Approve Proof of Work (Verifier Flow)
   verifyProof(id, approved = true, notes = '') {
     const comm = this.getCommissionById(id);
 
@@ -543,7 +718,6 @@ class StateManager {
         comm.status = 'completed';
         comm.votes.approve = 3;
 
-        // Reward assigned cleaner if found
         const assignedCleaner = Object.values(this.users).find(u => u.name === comm.assignedTo) || this.users['usr_cleaner_01'];
         if (assignedCleaner) {
           assignedCleaner.phpBalance += comm.rewardPhp;
@@ -552,7 +726,6 @@ class StateManager {
           assignedCleaner.stats.kgRecycled += (comm.proofData ? comm.proofData.weightRecordedKg : comm.estimatedWeightKg);
         }
 
-        // Record payout transaction
         this.transactions.unshift({
           id: `TX-PH-${Math.floor(1000 + Math.random() * 9000)}`,
           type: 'bounty_payout',
@@ -563,7 +736,9 @@ class StateManager {
           status: 'completed',
           date: 'Today',
           time: 'Just now',
-          channel: 'GCash Instant Payout (LGU Escrow)'
+          channel: 'GCash Instant Payout (LGU Escrow)',
+          recipient: `${assignedCleaner ? assignedCleaner.name : 'Cleaner'} (${assignedCleaner ? assignedCleaner.payoutAccount : 'GCash'})`,
+          feePhp: 0.00
         });
 
         this.save();
@@ -581,32 +756,6 @@ class StateManager {
     return false;
   }
 
-  // Cashout via GCash or Maya
-  withdraw(amount, provider = 'GCash', account = '0928-551-3941') {
-    const user = this.getUser();
-    amount = parseFloat(amount);
-    if (amount > 0 && user.phpBalance >= amount) {
-      user.phpBalance -= amount;
-      this.transactions.unshift({
-        id: `TX-PH-${Math.floor(1000 + Math.random() * 9000)}`,
-        type: 'withdrawal',
-        title: `${provider} Instant Cashout to ${account}`,
-        reference: `WD-${provider.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
-        amountPhp: -amount,
-        points: 0,
-        status: 'completed',
-        date: 'Today',
-        time: 'Just now',
-        channel: provider
-      });
-      this.save();
-      this.emit('stateChanged');
-      return true;
-    }
-    return false;
-  }
-
-  // Event Pub/Sub
   on(event, callback) {
     if (!this.listeners[event]) this.listeners[event] = [];
     this.listeners[event].push(callback);

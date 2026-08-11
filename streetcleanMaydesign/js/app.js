@@ -1,13 +1,16 @@
 /**
  * StreetClean | Ibalong Festival 2026 (Legazpi City)
  * Main Application Orchestrator & Client-Side SPA Router (White & Green Theme)
+ * Enforces Strict Role-Based Permissions (Cleaner, Resident, Verifier) & Dynamic Workspaces.
  */
 
-// Central Route Mapper
+// Central Route Mapper with Role-Based Route Guards
 window.renderRoute = () => {
   const hash = window.location.hash || '#/';
   const appRoot = document.getElementById('app-root');
   if (!appRoot) return;
+
+  const user = window.appState.getUser();
 
   // Cleanup prior maps/charts
   if (window.MapEngine) window.MapEngine.destroy();
@@ -15,11 +18,11 @@ window.renderRoute = () => {
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Update Header & Nav state
+  // Update Header & Nav state tailored to active role
   window.updateNavState(hash);
   window.updateHeaderUserChip();
 
-  // Route Dispatcher
+  // Route Dispatcher with RBAC Guards
   if (hash === '#/' || hash === '' || hash === '#/home') {
     appRoot.innerHTML = window.HomeView.render();
   } else if (hash.startsWith('#/commissions') || hash.startsWith('#/tasks')) {
@@ -37,7 +40,12 @@ window.renderRoute = () => {
       }
     }, 100);
   } else if (hash.startsWith('#/verify')) {
-    appRoot.innerHTML = window.VerifyView.render();
+    // RBAC Route Guard: Only Verifier can access Verification Hub
+    if (user.role !== 'verifier') {
+      appRoot.innerHTML = window.renderVerifierAccessDenied(user);
+    } else {
+      appRoot.innerHTML = window.VerifyView.render();
+    }
   } else if (hash.startsWith('#/wallet')) {
     appRoot.innerHTML = window.WalletView.render();
   } else if (hash.startsWith('#/dashboard') || hash.startsWith('#/impact')) {
@@ -54,66 +62,193 @@ window.renderRoute = () => {
   }
 };
 
-// Update active states on Desktop & Mobile bottom navbars
+// Access Denied Screen when Cleaner/Resident tries to access Verifier Hub
+window.renderVerifierAccessDenied = (user) => {
+  return `
+    <div class="animate-fade-in" style="padding: 2.5rem 1rem;">
+      <div class="card card-gold-glow" style="max-width: 480px; margin: 0 auto; padding: 2rem 1.5rem; text-align: center; background: #ffffff; border: 1px solid #fed7aa;">
+        <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem auto;">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <div style="font-size: 0.72rem; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+          LGU Marshall Authorization Required
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+          Verification Hub Access Restricted
+        </h2>
+        <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem;">
+          You are currently signed in as <strong>${user.name}</strong> (<span style="text-transform: uppercase; font-weight: 700; color: var(--emerald-700);">${user.role}</span>). Proof audits and escrow releases can only be authorized by official LGU Sanitation Marshalls.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn btn-gold btn-block" onclick="window.loginAsRoleDirect('verifier')">
+            <i class="fa-solid fa-shield-halved"></i> Log In as Verifier (Engr. Carlo Villanueva)
+          </button>
+          <a href="#/commissions" class="btn btn-secondary btn-block">
+            <i class="fa-solid fa-arrow-left"></i> Return to Tasks
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// 1-Click Role Login Direct Action
+window.loginAsRoleDirect = (role) => {
+  let userId = 'usr_cleaner_01';
+  if (role === 'resident') userId = 'usr_resident_01';
+  if (role === 'verifier') userId = 'usr_verifier_01';
+
+  window.switchUser(userId);
+  window.soundSystem.fanfare();
+  window.showToast(`Signed in as ${role.toUpperCase()}!`, 'success');
+
+  if (role === 'cleaner') window.location.hash = '#/commissions';
+  else if (role === 'resident') window.location.hash = '#/report';
+  else if (role === 'verifier') window.location.hash = '#/verify';
+};
+
+// Update Dynamic Desktop & Mobile Navigation based on Active Role
 window.updateNavState = (currentHash) => {
-  // Mobile Nav items
-  const bottomItems = document.querySelectorAll('.bottom-nav-item');
-  bottomItems.forEach(item => {
-    const href = item.getAttribute('href');
-    if (href === currentHash || (currentHash === '#/' && href === '#/')) {
-      item.classList.add('active');
-    } else if (currentHash.startsWith(href) && href !== '#/') {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
-    }
-  });
+  const user = window.appState.getUser();
+  const pendingVerifyCount = window.appState.getCommissions('in_review').length;
 
-  // Desktop Nav links
-  const desktopLinks = document.querySelectorAll('.desktop-nav-link');
-  desktopLinks.forEach(link => {
-    const href = link.getAttribute('href');
-    if (href === currentHash || (currentHash === '#/' && href === '#/')) {
-      link.classList.add('active');
-    } else if (currentHash.startsWith(href) && href !== '#/') {
-      link.classList.add('active');
-    } else {
-      link.classList.remove('active');
+  // 1. Update Desktop Navigation Links tailored for role
+  const desktopNav = document.getElementById('desktop-nav');
+  if (desktopNav) {
+    if (user.role === 'cleaner') {
+      desktopNav.innerHTML = `
+        <li><a href="#/" class="desktop-nav-link ${currentHash === '#/' ? 'active' : ''}"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a href="#/commissions" class="desktop-nav-link ${currentHash.startsWith('#/commissions') ? 'active' : ''}"><i class="fa-solid fa-list-check"></i> Tasks & Bounties</a></li>
+        <li><a href="#/wallet" class="desktop-nav-link ${currentHash.startsWith('#/wallet') ? 'active' : ''}"><i class="fa-solid fa-vault"></i> My Wallet</a></li>
+        <li><a href="#/profile" class="desktop-nav-link ${currentHash.startsWith('#/profile') ? 'active' : ''}"><i class="fa-solid fa-id-badge"></i> Eco-Rank</a></li>
+        <li><a href="#/dashboard" class="desktop-nav-link ${currentHash.startsWith('#/dashboard') ? 'active' : ''}"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+      `;
+    } else if (user.role === 'resident') {
+      desktopNav.innerHTML = `
+        <li><a href="#/" class="desktop-nav-link ${currentHash === '#/' ? 'active' : ''}"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a href="#/report" class="desktop-nav-link ${currentHash.startsWith('#/report') ? 'active' : ''}"><i class="fa-solid fa-camera"></i> Report Litter</a></li>
+        <li><a href="#/commissions" class="desktop-nav-link ${currentHash.startsWith('#/commissions') ? 'active' : ''}"><i class="fa-solid fa-map-location-dot"></i> Cleanup Map</a></li>
+        <li><a href="#/wallet" class="desktop-nav-link ${currentHash.startsWith('#/wallet') ? 'active' : ''}"><i class="fa-solid fa-hand-holding-dollar"></i> Civic Pledges</a></li>
+        <li><a href="#/dashboard" class="desktop-nav-link ${currentHash.startsWith('#/dashboard') ? 'active' : ''}"><i class="fa-solid fa-chart-line"></i> Impact</a></li>
+      `;
+    } else if (user.role === 'verifier') {
+      desktopNav.innerHTML = `
+        <li><a href="#/" class="desktop-nav-link ${currentHash === '#/' ? 'active' : ''}"><i class="fa-solid fa-house"></i> Home</a></li>
+        <li><a href="#/verify" class="desktop-nav-link ${currentHash.startsWith('#/verify') ? 'active' : ''}"><i class="fa-solid fa-shield-halved"></i> Verification Hub ${pendingVerifyCount > 0 ? `<span class="nav-badge-pill" style="position:static; margin-left:4px;">${pendingVerifyCount}</span>` : ''}</a></li>
+        <li><a href="#/commissions" class="desktop-nav-link ${currentHash.startsWith('#/commissions') ? 'active' : ''}"><i class="fa-solid fa-list-check"></i> Inspect Hotspots</a></li>
+        <li><a href="#/dashboard" class="desktop-nav-link ${currentHash.startsWith('#/dashboard') ? 'active' : ''}"><i class="fa-solid fa-chart-line"></i> ENRO Analytics</a></li>
+        <li><a href="#/wallet" class="desktop-nav-link ${currentHash.startsWith('#/wallet') ? 'active' : ''}"><i class="fa-solid fa-vault"></i> Escrow Pool</a></li>
+      `;
     }
-  });
+  }
 
-  // Update badge counters
-  const verifyCount = window.appState.getCommissions('in_review').length;
-  const verifyBadge = document.getElementById('nav-verify-badge');
-  if (verifyBadge) {
-    verifyBadge.innerText = verifyCount;
-    verifyBadge.style.display = verifyCount > 0 ? 'flex' : 'none';
+  // 2. Update Mobile Bottom Navigation Bar tailored for role
+  const mobileNav = document.querySelector('.mobile-bottom-nav');
+  if (mobileNav) {
+    if (user.role === 'cleaner') {
+      mobileNav.innerHTML = `
+        <a href="#/" class="bottom-nav-item ${currentHash === '#/' ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-house"></i>
+          <span>Home</span>
+        </a>
+        <a href="#/commissions" class="bottom-nav-item ${currentHash.startsWith('#/commissions') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Tasks</span>
+        </a>
+        <a href="#/commissions" class="bottom-nav-fab-wrap" onclick="window.soundSystem.click()">
+          <div class="bottom-nav-fab" style="background: linear-gradient(135deg, #059669, #10b981);">
+            <i class="fa-solid fa-broom"></i>
+          </div>
+        </a>
+        <a href="#/wallet" class="bottom-nav-item ${currentHash.startsWith('#/wallet') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-vault"></i>
+          <span>Wallet</span>
+        </a>
+        <a href="#/profile" class="bottom-nav-item ${currentHash.startsWith('#/profile') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-user"></i>
+          <span>Profile</span>
+        </a>
+      `;
+    } else if (user.role === 'resident') {
+      mobileNav.innerHTML = `
+        <a href="#/" class="bottom-nav-item ${currentHash === '#/' ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-house"></i>
+          <span>Home</span>
+        </a>
+        <a href="#/commissions" class="bottom-nav-item ${currentHash.startsWith('#/commissions') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>Map</span>
+        </a>
+        <a href="#/report" class="bottom-nav-fab-wrap" onclick="window.soundSystem.click()">
+          <div class="bottom-nav-fab" style="background: linear-gradient(135deg, #0284c7, #0ea5e9);">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+        </a>
+        <a href="#/wallet" class="bottom-nav-item ${currentHash.startsWith('#/wallet') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+          <span>Pledges</span>
+        </a>
+        <a href="#/profile" class="bottom-nav-item ${currentHash.startsWith('#/profile') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-user"></i>
+          <span>Profile</span>
+        </a>
+      `;
+    } else if (user.role === 'verifier') {
+      mobileNav.innerHTML = `
+        <a href="#/" class="bottom-nav-item ${currentHash === '#/' ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-house"></i>
+          <span>Home</span>
+        </a>
+        <a href="#/commissions" class="bottom-nav-item ${currentHash.startsWith('#/commissions') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Sites</span>
+        </a>
+        <a href="#/verify" class="bottom-nav-fab-wrap" onclick="window.soundSystem.click()">
+          <div class="bottom-nav-fab" style="background: linear-gradient(135deg, #b45309, #f59e0b);">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+        </a>
+        <a href="#/verify" class="bottom-nav-item ${currentHash.startsWith('#/verify') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>Verify</span>
+          ${pendingVerifyCount > 0 ? `<span class="nav-badge-pill">${pendingVerifyCount}</span>` : ''}
+        </a>
+        <a href="#/dashboard" class="bottom-nav-item ${currentHash.startsWith('#/dashboard') ? 'active' : ''}" onclick="window.soundSystem.click()">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Impact</span>
+        </a>
+      `;
+    }
   }
 };
 
-// Update header avatar chip with active user info
+// Update header avatar chip with active user info & role badge
 window.updateHeaderUserChip = () => {
   const user = window.appState.getUser();
   const chip = document.getElementById('header-user-chip');
   if (chip) {
+    let roleIcon = 'fa-broom';
+    let roleColor = 'var(--emerald-700)';
+
+    if (user.role === 'resident') {
+      roleIcon = 'fa-camera';
+      roleColor = '#0284c7';
+    } else if (user.role === 'verifier') {
+      roleIcon = 'fa-shield-halved';
+      roleColor = '#b45309';
+    }
+
     chip.innerHTML = `
-      <img src="${user.avatar}" class="user-quick-avatar" alt="${user.name}" />
-      <div style="text-align: left; line-height: 1.1;">
+      <img src="${user.avatar}" class="user-quick-avatar" alt="${user.name}" style="border: 2px solid ${roleColor};" />
+      <div style="text-align: left; line-height: 1.15;">
         <div class="user-quick-name">${user.name}</div>
-        <div class="user-quick-role">${user.role}</div>
+        <div class="user-quick-role" style="color: ${roleColor}; display: flex; align-items: center; gap: 3px;">
+          <i class="fa-solid ${roleIcon}"></i> ${user.role}
+        </div>
       </div>
     `;
   }
-
-  // Update Role Pill selector buttons
-  const roleButtons = document.querySelectorAll('.role-pill-btn');
-  roleButtons.forEach(btn => {
-    if (btn.classList.contains(`role-${user.role}`)) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
 };
 
 // Modal Engine
@@ -149,37 +284,25 @@ window.showToast = (message, type = 'success') => {
   if (type === 'error') icon = 'fa-triangle-exclamation';
 
   toast.innerHTML = `
-    <i class="fa-solid ${icon} toast-icon"></i>
-    <div class="toast-body">
-      <div class="toast-title">${type.toUpperCase()}</div>
-      <div class="toast-message">${message}</div>
-    </div>
+    <i class="fa-solid ${icon}"></i>
+    <div style="flex: 1;">${message}</div>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:currentColor;cursor:pointer;opacity:0.6;"><i class="fa-solid fa-xmark"></i></button>
   `;
 
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
+    toast.style.transform = 'translateY(10px)';
     setTimeout(() => toast.remove(), 300);
   }, 4000);
 };
 
-// Quick Switch Role
-window.switchRole = (roleKey) => {
-  window.appState.setUserRole(roleKey);
-  window.soundSystem.click();
-  const user = window.appState.getUser();
-  window.showToast(`Switched persona to ${user.name} (${user.role.toUpperCase()})`, 'gold');
-  window.renderRoute();
-};
-
-// Quick Switch User Account
+// Switch User Account
 window.switchUser = (userId) => {
   const success = window.appState.switchUser(userId);
   if (success) {
     window.soundSystem.success();
     const user = window.appState.getUser();
-    window.showToast(`Signed in as ${user.name} (${user.role.toUpperCase()})`, 'success');
     window.renderRoute();
   }
 };
@@ -196,7 +319,7 @@ window.toggleMobileFrame = () => {
   window.showToast(isFrame ? 'Mobile Device Frame Preview Enabled' : 'Full Responsive View Enabled', 'success');
 };
 
-// Open Commission Details & Actions Modal
+// Open Commission Details & Role-Specific Actions Modal
 window.openTaskModal = (id) => {
   window.openCommissionDetails(id);
 };
@@ -211,6 +334,69 @@ window.openCommissionDetails = (id) => {
   if (comm.status === 'in_progress') statusBadge = '<span class="status-badge status-in_progress"><span class="badge-dot"></span> In Progress</span>';
   if (comm.status === 'in_review') statusBadge = '<span class="status-badge status-in_review"><span class="badge-dot"></span> In Review by Verifier</span>';
   if (comm.status === 'completed') statusBadge = '<span class="status-badge status-completed"><span class="badge-dot"></span> Verified & Rewarded</span>';
+
+  // Determine actions based on Role and Status
+  let actionButtonsHtml = '';
+
+  if (user.role === 'cleaner') {
+    if (comm.status === 'open') {
+      actionButtonsHtml = `
+        <button class="btn btn-gold btn-block" onclick="window.claimTask('${comm.id}')">
+          <i class="fa-solid fa-hand-holding-dollar"></i> Claim Task & Lock Bounty (₱${comm.rewardPhp.toFixed(0)})
+        </button>
+      `;
+    } else if (comm.status === 'in_progress') {
+      actionButtonsHtml = `
+        <button class="btn btn-primary btn-block" onclick="window.openSubmitProofForm('${comm.id}')">
+          <i class="fa-solid fa-upload"></i> Submit Before & After Proof of Work
+        </button>
+      `;
+    } else if (comm.status === 'in_review') {
+      actionButtonsHtml = `
+        <div class="card" style="padding: 10px; background: #ffedd5; border: 1px solid #fed7aa; text-align: center; color: #c2410c; font-weight: 700; font-size: 0.82rem;">
+          <i class="fa-solid fa-hourglass-half"></i> Under Inspection by Marshall. Escrow releases upon approval.
+        </div>
+      `;
+    } else if (comm.status === 'completed') {
+      actionButtonsHtml = `
+        <div class="card" style="padding: 10px; background: #dcfce7; border: 1px solid #bbf7d0; text-align: center; color: #15803d; font-weight: 700; font-size: 0.82rem;">
+          <i class="fa-solid fa-circle-check"></i> Clean Verified! ₱${comm.rewardPhp.toFixed(0)} Bounty Paid.
+        </div>
+      `;
+    }
+  } else if (user.role === 'resident') {
+    // Resident actions: Pledge extra bounty or view progress
+    actionButtonsHtml = `
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-gold btn-block" onclick="window.pledgeExtraBounty('${comm.id}')">
+          <i class="fa-solid fa-heart-circle-plus"></i> Pledge +₱100 Bounty
+        </button>
+        <a href="#/report" class="btn btn-secondary btn-block" onclick="window.closeModal()">
+          <i class="fa-solid fa-camera"></i> Report New Spot
+        </a>
+      </div>
+    `;
+  } else if (user.role === 'verifier') {
+    // Verifier actions: Inspect or authorize payout
+    if (comm.status === 'in_review') {
+      actionButtonsHtml = `
+        <a href="#/verify" class="btn btn-gold btn-block" onclick="window.closeModal()">
+          <i class="fa-solid fa-shield-halved"></i> Open Audit in Verification Hub
+        </a>
+      `;
+    } else {
+      actionButtonsHtml = `
+        <div style="display: flex; gap: 8px;">
+          <a href="#/verify" class="btn btn-secondary btn-block" onclick="window.closeModal()">
+            <i class="fa-solid fa-clipboard-check"></i> Marshall Queue
+          </a>
+          <a href="#/dashboard" class="btn btn-primary btn-block" onclick="window.closeModal()">
+            <i class="fa-solid fa-chart-line"></i> View City Stats
+          </a>
+        </div>
+      `;
+    }
+  }
 
   const modalHtml = `
     <div class="modal-card">
@@ -243,63 +429,21 @@ window.openCommissionDetails = (id) => {
         </div>
       </div>
 
-      <!-- Photos (Before / After) -->
-      ${comm.imageAfter ? `
-        <div style="margin-bottom: 1.25rem;">
-          <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-            <i class="fa-solid fa-images" style="color: var(--emerald-600);"></i> Before & After Comparison:
-          </div>
-          <div class="before-after-container" id="slider-modal-${comm.id}">
-            <img src="${comm.imageAfter}" alt="After Cleanup" class="before-after-img" />
-            <span class="after-badge-label"><i class="fa-solid fa-check"></i> Cleaned</span>
-            
-            <div class="before-img-wrap" id="before-modal-wrap-${comm.id}">
-              <img src="${comm.imageBefore}" alt="Before Cleanup" id="before-modal-img-${comm.id}" />
-              <span class="before-badge-label"><i class="fa-solid fa-trash"></i> Dirty</span>
-            </div>
-
-            <div class="slider-handle" id="slider-modal-handle-${comm.id}"><i class="fa-solid fa-left-right"></i></div>
-            <input type="range" min="0" max="100" value="50" class="slider-range-input" oninput="window.updateModalSlider('${comm.id}', this.value)" />
-          </div>
+      <!-- Photo Display -->
+      <div style="margin-bottom: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+          <i class="fa-solid fa-camera" style="color: var(--emerald-600);"></i> Site Evidence:
         </div>
-      ` : `
-        <div style="margin-bottom: 1.25rem;">
-          <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-            <i class="fa-solid fa-camera" style="color: var(--emerald-600);"></i> Reported Site Photo:
-          </div>
-          <img src="${comm.imageBefore}" alt="${comm.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid #cbd5e1;" />
-        </div>
-      `}
+        <img src="${comm.imageBefore}" alt="${comm.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid #cbd5e1;" />
+      </div>
 
       <!-- Description -->
       <div style="font-size: 0.82rem; color: #475569; line-height: 1.5; margin-bottom: 1.25rem; background: #f8fafc; padding: 12px; border-radius: var(--radius-md); border: 1px solid #e2e8f0;">
         ${comm.description}
       </div>
 
-      <!-- Action Area -->
-      ${comm.status === 'open' ? `
-        <button class="btn btn-gold btn-block" onclick="window.claimTask('${comm.id}')">
-          <i class="fa-solid fa-hand-holding-dollar"></i> Claim Task & Lock Bounty (₱${comm.rewardPhp})
-        </button>
-      ` : ''}
-
-      ${comm.status === 'in_progress' ? `
-        <button class="btn btn-primary btn-block" onclick="window.openSubmitProofForm('${comm.id}')">
-          <i class="fa-solid fa-upload"></i> Submit Before & After Proof of Work
-        </button>
-      ` : ''}
-
-      ${comm.status === 'in_review' ? `
-        <div class="card" style="padding: 10px; background: #ffedd5; border: 1px solid #fed7aa; text-align: center; color: #c2410c; font-weight: 700; font-size: 0.85rem;">
-          <i class="fa-solid fa-hourglass-half"></i> Under Inspection by Legazpi Marshall. Escrow releases upon approval.
-        </div>
-      ` : ''}
-
-      ${comm.status === 'completed' ? `
-        <div class="card" style="padding: 10px; background: #dcfce7; border: 1px solid #bbf7d0; text-align: center; color: #15803d; font-weight: 700; font-size: 0.85rem;">
-          <i class="fa-solid fa-circle-check"></i> Clean Verified! ₱${comm.rewardPhp} Bounty Paid to ${comm.assignedTo || 'Cleaner'}.
-        </div>
-      ` : ''}
+      <!-- Action Buttons -->
+      ${actionButtonsHtml}
 
     </div>
   `;
@@ -307,21 +451,27 @@ window.openCommissionDetails = (id) => {
   window.openModal(modalHtml);
 };
 
-// Modal slider helper
-window.updateModalSlider = (id, val) => {
-  const wrap = document.getElementById(`before-modal-wrap-${id}`);
-  const handle = document.getElementById(`slider-modal-handle-${id}`);
-  const img = document.getElementById(`before-modal-img-${id}`);
-  const box = document.getElementById(`slider-modal-${id}`);
+// Pledge Extra Bounty (Resident Action)
+window.pledgeExtraBounty = (commId) => {
+  const comm = window.appState.getCommissionById(commId);
+  const user = window.appState.getUser();
+  if (!comm) return;
 
-  if (wrap && handle && img && box) {
-    wrap.style.width = `${val}%`;
-    handle.style.left = `${val}%`;
-    img.style.width = `${box.offsetWidth}px`;
+  if (user.phpBalance < 100) {
+    window.showToast('Insufficient wallet balance. Please add funds in your Civic Wallet.', 'error');
+    return;
   }
+
+  user.phpBalance -= 100;
+  comm.rewardPhp += 100;
+  window.appState.save();
+  window.soundSystem.fanfare();
+  window.closeModal();
+  window.showToast(`Pledged +₱100 bounty! Total reward is now ₱${comm.rewardPhp.toFixed(0)}.`, 'gold');
+  window.renderRoute();
 };
 
-// Claim Task Action
+// Claim Task Action (Cleaner Action)
 window.claimTask = (id) => {
   const success = window.appState.claimCommission(id);
   if (success) {
@@ -371,11 +521,11 @@ window.openSubmitProofForm = (id) => {
 
       <div class="form-group">
         <label class="form-label">Cleaner Notes / Segregation Summary</label>
-        <textarea class="form-control" id="proof-notes">Completely swept the site. All plastics segregated into blue recycling sacks for Legazpi MRF.</textarea>
+        <textarea class="form-control" id="proof-notes" rows="2" placeholder="e.g. Cleared plastics and paper cups. Sorted for city recycling."></textarea>
       </div>
 
-      <button class="btn btn-primary btn-block" onclick="window.submitProofAction('${comm.id}')">
-        <i class="fa-solid fa-paper-plane"></i> Submit to LGU Verifiers
+      <button class="btn btn-primary btn-block" onclick="window.submitProof('${comm.id}')">
+        <i class="fa-solid fa-paper-plane"></i> Submit to LGU Marshall for Verification
       </button>
     </div>
   `;
@@ -383,28 +533,32 @@ window.openSubmitProofForm = (id) => {
   window.openModal(modalHtml);
 };
 
-window.submitProofAction = (id) => {
-  const weight = document.getElementById('proof-weight')?.value || 30;
-  const manifest = document.getElementById('proof-manifest')?.value || 'LGU-MRF-2026-092';
-  const notes = document.getElementById('proof-notes')?.value || '';
+// Submit Proof Action (Cleaner Flow)
+window.submitProof = (id) => {
+  const weight = parseFloat(document.getElementById('proof-weight')?.value || 15);
+  const manifest = document.getElementById('proof-manifest')?.value || 'LGU-MRF-2026-088';
+  const notes = document.getElementById('proof-notes')?.value || 'Cleanup completed.';
 
-  const success = window.appState.submitProof(id, {
-    weightKg: weight,
-    manifestId: manifest,
-    notes: notes,
-    imageAfter: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'
-  });
+  const proofData = {
+    weightRecordedKg: weight,
+    facilityManifestId: manifest,
+    cleanerNotes: notes,
+    exifGpsMatch: 99.8,
+    aiCleanlinessScore: 99.4,
+    submittedAt: 'Just now'
+  };
 
+  const success = window.appState.submitProof(id, proofData);
   if (success) {
-    window.soundSystem.success();
+    window.soundSystem.fanfare();
     window.closeModal();
-    window.showToast('Proof submitted! Verifiers have been notified for audit.', 'success');
+    window.showToast('Proof submitted to LGU Marshalls! ₱ Bounty escrow pending review.', 'gold');
     window.renderRoute();
   }
 };
 
-// Initial App Boot
+// Initial boot
 window.addEventListener('DOMContentLoaded', () => {
-  window.addEventListener('hashchange', window.renderRoute);
   window.renderRoute();
+  window.addEventListener('hashchange', window.renderRoute);
 });
