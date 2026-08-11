@@ -753,3 +753,9 @@ textarea.form-control {
   font-size: 0.75rem;
   color: #475569;
 }
+
+body.auth-locked .role-pill-selector,
+body.auth-locked .desktop-nav-links,
+body.auth-locked .mobile-bottom-nav {
+  display: none !important;
+}

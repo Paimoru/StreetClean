@@ -9,6 +9,16 @@ window.AuthView = {
   registerStep: 1,
   selectedAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
 
+  // Step 2's fields live in this object so their values survive the
+  // full-view re-render that happens every time setStep() runs.
+  formData: {
+    name: '',
+    email: '',
+    password: 'password123',
+    barangay: 'Barangay Albay District, Legazpi City',
+    phone: '0917-555-1234'
+  },
+
   avatarPresets: [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
@@ -71,7 +81,7 @@ window.AuthView = {
         <form onsubmit="event.preventDefault(); window.AuthView.handleLogin();">
           <div class="form-group">
             <label class="form-label">Email or Mobile Number</label>
-            <input type="text" class="form-control" id="login-identifier" placeholder="e.g. maria@clean.ph or 09285513941" value="${currentUser.email}" required />
+             <input type="text" class="form-control" id="login-identifier" placeholder="e.g. maria@clean.ph or 09285513941" value="${currentUser ? currentUser.email : ''}" required />
           </div>
 
           <div class="form-group">
@@ -95,7 +105,7 @@ window.AuthView = {
 
           <div style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;">
             ${allUsers.map(u => `
-              <div class="card ${currentUser.id === u.id ? 'card-gold-glow' : ''}" style="padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0;" onclick="window.switchUser('${u.id}')">
+              <div class="card ${currentUser && currentUser.id === u.id ? 'card-gold-glow' : ''}" style="padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0;" onclick="window.switchUser('${u.id}')">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <img src="${u.avatar}" style="width: 38px; height: 38px; border-radius: var(--radius-full); object-fit: cover; border: 2px solid ${u.role === 'cleaner' ? 'var(--emerald-500)' : (u.role === 'resident' ? '#0ea5e9' : 'var(--gold-500)')};" />
                   <div>
@@ -105,7 +115,7 @@ window.AuthView = {
                     </div>
                   </div>
                 </div>
-                ${currentUser.id === u.id ? '<span class="status-badge status-completed"><i class="fa-solid fa-check"></i> Active</span>' : '<button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.72rem;">Switch</button>'}
+                ${currentUser && currentUser.id === u.id ? '<span class="status-badge status-completed"><i class="fa-solid fa-check"></i> Active</span>' : '<button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.72rem;">Switch</button>'}
               </div>
             `).join('')}
           </div>
@@ -229,36 +239,36 @@ window.AuthView = {
 
         <div class="form-group">
           <label class="form-label">Full Legal Name</label>
-          <input type="text" class="form-control" id="reg-name" placeholder="e.g. Christian Hernandez" required />
+          <input type="text" class="form-control" id="reg-name" placeholder="e.g. Christian Hernandez" value="${this.formData.name}" required />
         </div>
 
         <div class="form-group">
           <label class="form-label">Email Address</label>
-          <input type="email" class="form-control" id="reg-email" placeholder="e.g. christian@example.com" required />
+          <input type="email" class="form-control" id="reg-email" placeholder="e.g. christian@example.com" value="${this.formData.email}" required />
         </div>
 
         <div class="form-group">
           <label class="form-label">Create Password</label>
-          <input type="password" class="form-control" id="reg-password" placeholder="At least 6 characters" value="password123" required />
+          <input type="password" class="form-control" id="reg-password" placeholder="At least 6 characters" value="${this.formData.password}" required />
         </div>
 
         <div class="form-group">
           <label class="form-label">Legazpi City Barangay</label>
           <select class="form-control" id="reg-barangay">
-            <option value="Barangay Albay District, Legazpi City">Barangay Albay District (Peñaranda Park)</option>
-            <option value="Barangay Bitano, Legazpi City">Barangay Bitano (Astrodome Zone)</option>
-            <option value="Barangay Puro, Legazpi City">Barangay Puro (Legazpi Boulevard)</option>
-            <option value="Barangay Rawis, Legazpi City">Barangay Rawis</option>
-            <option value="Barangay Bogtong, Legazpi City">Barangay Bogtong</option>
-            <option value="Barangay EM's Barrio, Legazpi City">Barangay EM's Barrio</option>
-            <option value="Barangay Port District, Legazpi City">Barangay Port District (Embarcadero)</option>
-            <option value="Barangay Dap-dap, Legazpi City">Barangay Dap-dap</option>
+            <option value="Barangay Albay District, Legazpi City" ${this.formData.barangay === 'Barangay Albay District, Legazpi City' ? 'selected' : ''}>Barangay Albay District (Peñaranda Park)</option>
+            <option value="Barangay Bitano, Legazpi City" ${this.formData.barangay === 'Barangay Bitano, Legazpi City' ? 'selected' : ''}>Barangay Bitano (Astrodome Zone)</option>
+            <option value="Barangay Puro, Legazpi City" ${this.formData.barangay === 'Barangay Puro, Legazpi City' ? 'selected' : ''}>Barangay Puro (Legazpi Boulevard)</option>
+            <option value="Barangay Rawis, Legazpi City" ${this.formData.barangay === 'Barangay Rawis, Legazpi City' ? 'selected' : ''}>Barangay Rawis</option>
+            <option value="Barangay Bogtong, Legazpi City" ${this.formData.barangay === 'Barangay Bogtong, Legazpi City' ? 'selected' : ''}>Barangay Bogtong</option>
+            <option value="Barangay EM's Barrio, Legazpi City" ${this.formData.barangay === "Barangay EM's Barrio, Legazpi City" ? 'selected' : ''}>Barangay EM's Barrio</option>
+            <option value="Barangay Port District, Legazpi City" ${this.formData.barangay === 'Barangay Port District, Legazpi City' ? 'selected' : ''}>Barangay Port District (Embarcadero)</option>
+            <option value="Barangay Dap-dap, Legazpi City" ${this.formData.barangay === 'Barangay Dap-dap, Legazpi City' ? 'selected' : ''}>Barangay Dap-dap</option>
           </select>
         </div>
 
         <div class="form-group">
           <label class="form-label">Mobile Phone (GCash / Maya)</label>
-          <input type="tel" class="form-control" id="reg-phone" placeholder="e.g. 0917-555-1234" value="0917-555-1234" required />
+          <input type="tel" class="form-control" id="reg-phone" placeholder="e.g. 0917-555-1234" value="${this.formData.phone}" required />
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 1.25rem;">
@@ -322,6 +332,15 @@ window.AuthView = {
   },
 
   setStep(step) {
+    // If we're leaving step 2, its input fields are about to be destroyed
+    // by the re-render — grab their current values first so nothing is lost.
+    if (this.registerStep === 2) {
+      this.formData.name = document.getElementById('reg-name')?.value ?? this.formData.name;
+      this.formData.email = document.getElementById('reg-email')?.value ?? this.formData.email;
+      this.formData.password = document.getElementById('reg-password')?.value ?? this.formData.password;
+      this.formData.barangay = document.getElementById('reg-barangay')?.value ?? this.formData.barangay;
+      this.formData.phone = document.getElementById('reg-phone')?.value ?? this.formData.phone;
+    }
     this.registerStep = step;
     window.renderRoute();
   },
@@ -331,7 +350,7 @@ window.AuthView = {
     window.renderRoute();
   },
 
-  handleLogin() {
+  async handleLogin() {
     const idInput = document.getElementById('login-identifier');
     const passInput = document.getElementById('login-password');
     const identifier = idInput ? idInput.value : '';
@@ -341,8 +360,8 @@ window.AuthView = {
       window.showToast('Please enter your email or mobile number.', 'error');
       return;
     }
-
-    const result = window.appState.loginUser(identifier, password);
+    window.showToast('Signing in...', 'success');
+    const result = await window.appState.loginUser(identifier, password);
     if (result.success) {
       window.soundSystem.success();
       window.showToast(`Welcome back, ${result.user.name}! Signed in as ${result.user.role.toUpperCase()}.`, 'success');
@@ -352,21 +371,38 @@ window.AuthView = {
     }
   },
 
-  createRealAccount() {
-    const name = document.getElementById('reg-name')?.value || 'New User';
-    const email = document.getElementById('reg-email')?.value || `user_${Date.now()}@clean.ph`;
-    const password = document.getElementById('reg-password')?.value || 'password123';
-    const barangay = document.getElementById('reg-barangay')?.value || 'Barangay Albay District, Legazpi City';
-    const phone = document.getElementById('reg-phone')?.value || '0917-000-0000';
+  async createRealAccount() {
+    // Step 3 (where this button lives) has no reg-* input fields — those
+    // only exist on step 2 and are captured into this.formData by setStep()
+    // when the user leaves step 2. Also do one last capture here in case
+    // they never left step 2 through setStep (e.g. only one step was shown).
+    const liveName = document.getElementById('reg-name')?.value;
+    if (liveName !== undefined) this.formData.name = liveName;
+    const liveEmail = document.getElementById('reg-email')?.value;
+    if (liveEmail !== undefined) this.formData.email = liveEmail;
+    const livePassword = document.getElementById('reg-password')?.value;
+    if (livePassword !== undefined) this.formData.password = livePassword;
+    const liveBarangay = document.getElementById('reg-barangay')?.value;
+    if (liveBarangay !== undefined) this.formData.barangay = liveBarangay;
+    const livePhone = document.getElementById('reg-phone')?.value;
+    if (livePhone !== undefined) this.formData.phone = livePhone;
 
-    if (!name.trim()) {
+    const rawName = this.formData.name || '';
+    const email = this.formData.email || `user_${Date.now()}@clean.ph`;
+    const password = this.formData.password || 'password123';
+    const barangay = this.formData.barangay || 'Barangay Albay District, Legazpi City';
+    const phone = this.formData.phone || '0917-000-0000';
+
+    if (!rawName.trim()) {
       window.showToast('Please enter your legal name.', 'error');
       this.registerStep = 2;
       window.renderRoute();
       return;
     }
+    const name = rawName.trim();
 
-    const newUser = window.appState.registerUser({
+    window.showToast('Creating your account...', 'success');
+    const result = await window.appState.registerUser({
       name: name,
       email: email,
       password: password,
@@ -378,10 +414,15 @@ window.AuthView = {
       payoutAccount: phone
     });
 
-    window.soundSystem.success();
-    window.showToast(`Account created for ${newUser.name}! Welcome to Ibalong 2026.`, 'success');
-    this.registerStep = 1;
-    window.location.hash = '#/dashboard';
+    if (result.success) {
+      window.soundSystem.success();
+      window.showToast(`Account created for ${result.user.name}! Welcome to Ibalong 2026.`, 'success');
+      this.registerStep = 1;
+      this.formData = { name: '', email: '', password: 'password123', barangay: 'Barangay Albay District, Legazpi City', phone: '0917-555-1234' };
+      window.location.hash = '#/dashboard';
+    } else {
+      window.showToast(result.message, 'error');
+    }
   },
 
   createAccount() {

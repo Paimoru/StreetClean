@@ -2,105 +2,15 @@
  * StreetClean | Ibalong Festival 2026 (Legazpi City)
  * Central Reactive State Engine
  * Supports Multiple Real User Accounts, Registration, Login & Role Switching.
+ *
+ * PATCHED: registerUser() and loginUser() now verify against real Firebase
+ * Auth instead of a plaintext password check. Everything else (rich local
+ * profiles, badges, stats, wallet, role-switcher) is untouched.
+ * Requires: firebase-app-compat.js, firebase-auth-compat.js, and
+ * js/firebase-config.js loaded BEFORE this file in index.html.
  */
 
-const DEFAULT_ACCOUNTS = {
-  'usr_cleaner_01': {
-    id: 'usr_cleaner_01',
-    name: 'Maria Bataller',
-    email: 'maria@clean.ph',
-    password: 'password123',
-    role: 'cleaner',
-    roleTitle: 'Ibalong Eco-Warrior (Master Sentinel)',
-    badgeLevel: 'Gold Sentinel #07',
-    barangay: 'Barangay Bitano, Legazpi City',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-    phone: '0928-551-3941',
-    payoutProvider: 'GCash',
-    payoutAccount: '0928-551-3941',
-    phpBalance: 4850.00,
-    cleanPoints: 12400,
-    stakedPoints: 5000,
-    escrowLockedPhp: 1200.00,
-    createdAt: 'Aug 01, 2026',
-    stats: {
-      completedCleans: 46,
-      kgRecycled: 1420,
-      verificationRate: 100.0,
-      festivalRank: '#2 Legazpi Leaderboard',
-      hoursContributed: 84
-    },
-    badges: [
-      { id: 'b1', name: 'Mayon Protector', desc: 'Cleared >500kg festival waste', icon: 'fa-mountain', color: 'gold' },
-      { id: 'b2', name: 'Boulevard Cleaner', desc: '10+ cleanups along Legazpi Boulevard', icon: 'fa-water', color: 'teal' },
-      { id: 'b3', name: 'Rapid Response', desc: 'Cleared hotspot under 90 minutes', icon: 'fa-bolt', color: 'gold' },
-      { id: 'b4', name: 'Ibalong Hero 2026', desc: 'Official City Festival Sanitation Pass', icon: 'fa-shield-halved', color: 'teal' }
-    ],
-    gear: ['Smart Litter Grabber Pro', 'Heavy Duty Biodegradable Sacks', 'Reflective Ibalong Vest']
-  },
-  'usr_resident_01': {
-    id: 'usr_resident_01',
-    name: 'Juan Santos',
-    email: 'juan@resident.ph',
-    password: 'password123',
-    role: 'resident',
-    roleTitle: 'Civic Guardian & Festival Reporter',
-    badgeLevel: 'Barangay Albay Civic Pillar',
-    barangay: 'Barangay Albay District, Legazpi City',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
-    phone: '0917-882-1920',
-    payoutProvider: 'Maya',
-    payoutAccount: '0917-882-1920',
-    phpBalance: 2500.00,
-    cleanPoints: 3450,
-    stakedPoints: 1000,
-    escrowLockedPhp: 850.00,
-    createdAt: 'Aug 03, 2026',
-    stats: {
-      completedCleans: 12,
-      kgRecycled: 380,
-      verificationRate: 100.0,
-      festivalRank: '#8 Civic Reporter',
-      hoursContributed: 26
-    },
-    badges: [
-      { id: 'b1', name: 'Eagle Eye', desc: 'Reported 12 verified festival hotspots', icon: 'fa-eye', color: 'teal' },
-      { id: 'b2', name: 'Civic Benefactor', desc: 'Pledged >₱2,000 in community clean bounties', icon: 'fa-hand-holding-dollar', color: 'gold' }
-    ],
-    gear: ['Mobile GPS Geotagger', 'Festival Cam App']
-  },
-  'usr_verifier_01': {
-    id: 'usr_verifier_01',
-    name: 'Capt. Aris Gomez',
-    email: 'aris@enro.gov.ph',
-    password: 'password123',
-    role: 'verifier',
-    roleTitle: 'Ibalong 2026 Marshall / ENRO Inspector',
-    badgeLevel: 'Chief Sanitation Auditor',
-    barangay: 'Legazpi City Hall / Task Force Ibalong',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
-    phone: '0919-440-2026',
-    payoutProvider: 'LandBank',
-    payoutAccount: 'LB-0482-1192',
-    phpBalance: 9800.00,
-    cleanPoints: 21000,
-    stakedPoints: 8000,
-    escrowLockedPhp: 18500.00,
-    createdAt: 'Jul 28, 2026',
-    stats: {
-      completedCleans: 128,
-      kgRecycled: 5400,
-      verificationRate: 99.8,
-      festivalRank: 'Lead Festival Marshall',
-      hoursContributed: 210
-    },
-    badges: [
-      { id: 'b1', name: 'Supreme Arbiter', desc: 'Approved >100 verified cleanups', icon: 'fa-scale-balanced', color: 'gold' },
-      { id: 'b2', name: 'LGU Authorized', desc: 'City Mayor & ENRO Official Seal', icon: 'fa-certificate', color: 'teal' }
-    ],
-    gear: ['LGU Weighing Scale Rig', 'Digital Waste Manifest Scanner']
-  }
-};
+const DEFAULT_ACCOUNTS = {};
 
 const DEFAULT_FESTIVAL_HOTSPOTS = [
   {
@@ -278,6 +188,21 @@ const DEFAULT_TRANSACTIONS = [
   }
 ];
 
+// ---------- Firebase error -> friendly message ----------
+// (new helper — used by the patched registerUser/loginUser below)
+function humanizeFirebaseError(err) {
+  const map = {
+    'auth/email-already-in-use': 'An account already exists with this email.',
+    'auth/invalid-email': "That doesn't look like a valid email address.",
+    'auth/weak-password': 'Password should be at least 6 characters.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.'
+  };
+  return map[err.code] || err.message;
+}
+
 class StateManager {
   constructor() {
     this.listeners = {};
@@ -308,9 +233,12 @@ class StateManager {
     localStorage.setItem('streetclean_active_user_id', this.currentUserId);
   }
 
-  // Get active logged-in user
+  // Get active logged-in user (returns null if logged out — do NOT fall
+  // back to a random stored account, or the auth gate in app.js will think
+  // someone is still logged in after they've signed out)
   getUser() {
-    return this.users[this.currentUserId] || Object.values(this.users)[0];
+    if (!this.currentUserId) return null;
+    return this.users[this.currentUserId] || null;
   }
 
   // Get all registered accounts list
@@ -318,9 +246,20 @@ class StateManager {
     return Object.values(this.users);
   }
 
-  // Register a brand new real user account
-  registerUser(data) {
-    const newId = `usr_${Date.now()}`;
+  // ---------- PATCHED: Register a brand new REAL account via Firebase Auth ----------
+  async registerUser(data) {
+    const email = data.email.trim().toLowerCase();
+
+    let cred;
+    try {
+      cred = await auth.createUserWithEmailAndPassword(email, data.password);
+    } catch (err) {
+      return { success: false, message: humanizeFirebaseError(err) };
+    }
+
+    const uid = cred.user.uid;
+    await cred.user.updateProfile({ displayName: data.name.trim() });
+
     const roleTitles = {
       resident: 'Civic Guardian & Festival Reporter',
       cleaner: 'Ibalong Eco-Warrior & Clean Specialist',
@@ -328,10 +267,9 @@ class StateManager {
     };
 
     const newUser = {
-      id: newId,
+      id: uid,
       name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      password: data.password || 'password123',
+      email,
       role: data.role || 'cleaner',
       roleTitle: roleTitles[data.role] || 'Civic Participant',
       badgeLevel: `${data.barangay ? data.barangay.split(',')[0] : 'Legazpi'} Active Member`,
@@ -358,39 +296,61 @@ class StateManager {
       gear: ['Basic Sanitation Gloves', 'Biodegradable Segregation Bags']
     };
 
-    this.users[newId] = newUser;
-    this.currentUserId = newId;
+    this.users[uid] = newUser;
+    this.currentUserId = uid;
     this.save();
-    
+
     this.emit('userChanged', newUser);
     this.emit('stateChanged');
-    return newUser;
+    return { success: true, user: newUser };
   }
 
-  // Log in with email / phone & password
-  loginUser(identifier, password) {
-    const cleanId = identifier.trim().toLowerCase();
-    const allUsers = Object.values(this.users);
-    
-    // Find matching user
-    const foundUser = allUsers.find(u => 
-      u.email.toLowerCase() === cleanId || 
-      u.phone.replace(/[^0-9]/g, '') === cleanId.replace(/[^0-9]/g, '')
-    );
+  // ---------- PATCHED: Log in with a REAL Firebase credential check ----------
+  async loginUser(identifier, password) {
+    const email = identifier.trim().toLowerCase();
 
-    if (!foundUser) {
-      return { success: false, message: 'No account found with this email or mobile number.' };
+    let cred;
+    try {
+      cred = await auth.signInWithEmailAndPassword(email, password);
+    } catch (err) {
+      return { success: false, message: humanizeFirebaseError(err) };
     }
 
-    if (password && foundUser.password && foundUser.password !== password) {
-      return { success: false, message: 'Incorrect password. Please try again.' };
+    const uid = cred.user.uid;
+
+    let user = this.users[uid];
+    if (!user) {
+      // Real Firebase account exists, but no local profile on this browser yet
+      // (e.g. different device). Create a starter profile so nothing breaks.
+      user = {
+        id: uid,
+        name: cred.user.displayName || email.split('@')[0],
+        email,
+        role: 'cleaner',
+        roleTitle: 'Ibalong Eco-Warrior & Clean Specialist',
+        badgeLevel: 'Legazpi Active Member',
+        barangay: 'Barangay Albay District, Legazpi City',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
+        phone: '0917-000-0000',
+        payoutProvider: 'GCash',
+        payoutAccount: '0917-000-0000',
+        phpBalance: 500.00,
+        cleanPoints: 250,
+        stakedPoints: 0,
+        escrowLockedPhp: 0.00,
+        createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        stats: { completedCleans: 0, kgRecycled: 0, verificationRate: 100.0, festivalRank: 'New Eco-Warrior', hoursContributed: 0 },
+        badges: [],
+        gear: []
+      };
+      this.users[uid] = user;
     }
 
-    this.currentUserId = foundUser.id;
+    this.currentUserId = uid;
     this.save();
-    this.emit('userChanged', foundUser);
+    this.emit('userChanged', user);
     this.emit('stateChanged');
-    return { success: true, user: foundUser };
+    return { success: true, user };
   }
 
   // Switch to an existing account by ID
