@@ -2,6 +2,12 @@
  * StreetClean | Ibalong Festival 2026 (Legazpi City)
  * Central Reactive State Engine
  * Supports Multiple Real User Accounts, Registration, Login & Role Switching.
+ *
+ * PATCHED: registerUser() and loginUser() now verify against real Firebase
+ * Auth instead of a plaintext password check. Everything else (rich local
+ * profiles, badges, stats, wallet, role-switcher) is untouched.
+ * Requires: firebase-app-compat.js, firebase-auth-compat.js, and
+ * js/firebase-config.js loaded BEFORE this file in index.html.
  */
 
 const DEFAULT_ACCOUNTS = {
@@ -278,6 +284,21 @@ const DEFAULT_TRANSACTIONS = [
   }
 ];
 
+// ---------- Firebase error -> friendly message ----------
+// (new helper — used by the patched registerUser/loginUser below)
+function humanizeFirebaseError(err) {
+  const map = {
+    'auth/email-already-in-use': 'An account already exists with this email.',
+    'auth/invalid-email': "That doesn't look like a valid email address.",
+    'auth/weak-password': 'Password should be at least 6 characters.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.'
+  };
+  return map[err.code] || err.message;
+}
+
 class StateManager {
   constructor() {
     this.listeners = {};
@@ -318,9 +339,20 @@ class StateManager {
     return Object.values(this.users);
   }
 
-  // Register a brand new real user account
-  registerUser(data) {
-    const newId = `usr_${Date.now()}`;
+  // ---------- PATCHED: Register a brand new REAL account via Firebase Auth ----------
+  async registerUser(data) {
+    const email = data.email.trim().toLowerCase();
+
+    let cred;
+    try {
+      cred = await auth.createUserWithEmailAndPassword(email, data.password);
+    } catch (err) {
+      return { success: false, message: humanizeFirebaseError(err) };
+    }
+
+    const uid = cred.user.uid;
+    await cred.user.updateProfile({ displayName: data.name.trim() });
+
     const roleTitles = {
       resident: 'Civic Guardian & Festival Reporter',
       cleaner: 'Ibalong Eco-Warrior & Clean Specialist',
@@ -328,10 +360,9 @@ class StateManager {
     };
 
     const newUser = {
-      id: newId,
+      id: uid,
       name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      password: data.password || 'password123',
+      email,
       role: data.role || 'cleaner',
       roleTitle: roleTitles[data.role] || 'Civic Participant',
       badgeLevel: `${data.barangay ? data.barangay.split(',')[0] : 'Legazpi'} Active Member`,
@@ -358,39 +389,61 @@ class StateManager {
       gear: ['Basic Sanitation Gloves', 'Biodegradable Segregation Bags']
     };
 
-    this.users[newId] = newUser;
-    this.currentUserId = newId;
+    this.users[uid] = newUser;
+    this.currentUserId = uid;
     this.save();
-    
+
     this.emit('userChanged', newUser);
     this.emit('stateChanged');
-    return newUser;
+    return { success: true, user: newUser };
   }
 
-  // Log in with email / phone & password
-  loginUser(identifier, password) {
-    const cleanId = identifier.trim().toLowerCase();
-    const allUsers = Object.values(this.users);
-    
-    // Find matching user
-    const foundUser = allUsers.find(u => 
-      u.email.toLowerCase() === cleanId || 
-      u.phone.replace(/[^0-9]/g, '') === cleanId.replace(/[^0-9]/g, '')
-    );
+  // ---------- PATCHED: Log in with a REAL Firebase credential check ----------
+  async loginUser(identifier, password) {
+    const email = identifier.trim().toLowerCase();
 
-    if (!foundUser) {
-      return { success: false, message: 'No account found with this email or mobile number.' };
+    let cred;
+    try {
+      cred = await auth.signInWithEmailAndPassword(email, password);
+    } catch (err) {
+      return { success: false, message: humanizeFirebaseError(err) };
     }
 
-    if (password && foundUser.password && foundUser.password !== password) {
-      return { success: false, message: 'Incorrect password. Please try again.' };
+    const uid = cred.user.uid;
+
+    let user = this.users[uid];
+    if (!user) {
+      // Real Firebase account exists, but no local profile on this browser yet
+      // (e.g. different device). Create a starter profile so nothing breaks.
+      user = {
+        id: uid,
+        name: cred.user.displayName || email.split('@')[0],
+        email,
+        role: 'cleaner',
+        roleTitle: 'Ibalong Eco-Warrior & Clean Specialist',
+        badgeLevel: 'Legazpi Active Member',
+        barangay: 'Barangay Albay District, Legazpi City',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
+        phone: '0917-000-0000',
+        payoutProvider: 'GCash',
+        payoutAccount: '0917-000-0000',
+        phpBalance: 500.00,
+        cleanPoints: 250,
+        stakedPoints: 0,
+        escrowLockedPhp: 0.00,
+        createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        stats: { completedCleans: 0, kgRecycled: 0, verificationRate: 100.0, festivalRank: 'New Eco-Warrior', hoursContributed: 0 },
+        badges: [],
+        gear: []
+      };
+      this.users[uid] = user;
     }
 
-    this.currentUserId = foundUser.id;
+    this.currentUserId = uid;
     this.save();
-    this.emit('userChanged', foundUser);
+    this.emit('userChanged', user);
     this.emit('stateChanged');
-    return { success: true, user: foundUser };
+    return { success: true, user };
   }
 
   // Switch to an existing account by ID
