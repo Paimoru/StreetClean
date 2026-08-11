@@ -9,12 +9,12 @@
    ========================================================================== */
 
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId: "PASTE_YOUR_APP_ID",
+  apiKey: "AIzaSyCxKpvlp0QpAhcBuqHWIPaHzEUdUp1qGQY",
+  authDomain: "streetclean-bda54.firebaseapp.com",
+  projectId: "streetclean-bda54",
+  storageBucket: "streetclean-bda54.appspot.com",
+  messagingSenderId: "443391008611",
+  appId: "1:443391008611:web:4095ddf58c54a0795b7d56",
 };
 
 firebase.initializeApp(firebaseConfig);
