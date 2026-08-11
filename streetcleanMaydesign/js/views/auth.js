@@ -352,7 +352,7 @@ window.AuthView = {
     }
   },
 
-  createRealAccount() {
+  async createRealAccount() {
     const name = document.getElementById('reg-name')?.value || 'New User';
     const email = document.getElementById('reg-email')?.value || `user_${Date.now()}@clean.ph`;
     const password = document.getElementById('reg-password')?.value || 'password123';
@@ -366,6 +366,7 @@ window.AuthView = {
       return;
     }
 
+    window.showToast('Creating your account...', 'success');
     const newUser = window.appState.registerUser({
       name: name,
       email: email,
@@ -378,10 +379,14 @@ window.AuthView = {
       payoutAccount: phone
     });
 
+    if (result.success) {
     window.soundSystem.success();
     window.showToast(`Account created for ${newUser.name}! Welcome to Ibalong 2026.`, 'success');
     this.registerStep = 1;
     window.location.hash = '#/dashboard';
+    } else {
+      window.showToast(result.message, 'error');
+    }
   },
 
   createAccount() {
