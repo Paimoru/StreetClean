@@ -11,6 +11,18 @@ window.renderRoute = () => {
   if (!appRoot) return;
 
   const user = window.appState.getUser();
+  const loggedIn = !!user;
+  const isAuthRoute = hash.startsWith('#/auth') || hash.startsWith('#/login') || hash.startsWith('#/register');
+  document.body.classList.toggle('auth-locked', !loggedIn);
+
+  if (!loggedIn && !isAuthRoute) {
+    window.location.hash = '#/auth';
+    return;
+  }
+  if (loggedIn && isAuthRoute) {
+    window.location.hash = '#/';
+    return;
+  }
 
   // Cleanup prior maps/charts
   if (window.MapEngine) window.MapEngine.destroy();
@@ -227,6 +239,13 @@ window.updateNavState = (currentHash) => {
 window.updateHeaderUserChip = () => {
   const user = window.appState.getUser();
   const chip = document.getElementById('header-user-chip');
+
+  if (!user) {
+    if (chip) chip.innerHTML = `<span style="font-size:0.8rem; font-weight:700; padding:0 4px;">Sign In</span>`;
+    document.querySelectorAll('.role-pill-btn').forEach(btn => btn.classList.remove('active'));
+    return;
+  }
+
   if (chip) {
     let roleIcon = 'fa-broom';
     let roleColor = 'var(--emerald-700)';
@@ -249,7 +268,16 @@ window.updateHeaderUserChip = () => {
       </div>
     `;
   }
+  const roleButtons = document.querySelectorAll('.role-pill-btn');
+  roleButtons.forEach(btn => {
+    if (btn.classList.contains(`role-${user.role}`)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
 };
+
 
 // Modal Engine
 window.openModal = (contentHtml) => {
@@ -297,7 +325,29 @@ window.showToast = (message, type = 'success') => {
   }, 4000);
 };
 
-// Switch User Account
+// Quick Switch Role
+window.switchRole = (roleKey) => {
+  window.appState.setUserRole(roleKey);
+  window.soundSystem.click();
+  const user = window.appState.getUser();
+  window.showToast(`Switched persona to ${user.name} (${user.role.toUpperCase()})`, 'gold');
+  window.renderRoute();
+};
+
+// Log Out — signs out of Firebase; the onAuthStateChanged listener below
+// picks up the change, clears the local session, and redirects to #/auth.
+window.logoutUser = async () => {
+  if (!confirm('Log out of StreetClean?')) return;
+  try {
+    await auth.signOut();
+    window.soundSystem.click();
+    window.showToast('Signed out. See you next cleanup!', 'success');
+  } catch (err) {
+    window.showToast('Could not sign out. Please try again.', 'error');
+  }
+};
+
+// Quick Switch User Account
 window.switchUser = (userId) => {
   const success = window.appState.switchUser(userId);
   if (success) {
@@ -557,8 +607,46 @@ window.submitProof = (id) => {
   }
 };
 
-// Initial boot
+// Initial App Boot — wait for Firebase to confirm the real session first
 window.addEventListener('DOMContentLoaded', () => {
-  window.renderRoute();
   window.addEventListener('hashchange', window.renderRoute);
+
+  auth.onAuthStateChanged((firebaseUser) => {
+    if (firebaseUser) {
+      if (!window.appState.users[firebaseUser.uid]) {
+        window.appState.users[firebaseUser.uid] = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          email: firebaseUser.email,
+          role: 'cleaner',
+          roleTitle: 'Ibalong Eco-Warrior & Clean Specialist',
+          badgeLevel: 'Legazpi Active Member',
+          barangay: 'Barangay Albay District, Legazpi City',
+          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
+          phone: '0917-000-0000',
+          payoutProvider: 'GCash',
+          payoutAccount: '0917-000-0000',
+          phpBalance: 500.00,
+          cleanPoints: 250,
+          stakedPoints: 0,
+          escrowLockedPhp: 0.00,
+          createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          stats: { completedCleans: 0, kgRecycled: 0, verificationRate: 100.0, festivalRank: 'New Eco-Warrior', hoursContributed: 0 },
+          badges: [],
+          gear: []
+        };
+      }
+      window.appState.currentUserId = firebaseUser.uid;
+      window.appState.save();
+
+      const h = window.location.hash;
+      if (!h || h.startsWith('#/auth') || h.startsWith('#/login') || h.startsWith('#/register')) {
+        window.location.hash = '#/';
+      }
+    } else {
+      window.appState.currentUserId = null;
+      window.location.hash = '#/auth';
+    }
+    window.renderRoute();
+  });
 });

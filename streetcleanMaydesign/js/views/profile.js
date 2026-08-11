@@ -88,6 +88,13 @@ window.ProfileView = {
             </div>
           </div>
 
+          <!-- Sign Out -->
+          <div class="card" style="padding: 1rem 1.25rem; background: #ffffff; margin-top: 1.25rem;">
+            <button class="btn btn-secondary btn-block" style="color: #e11d48; border-color: #fecaca;" onclick="window.logoutUser()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out
+            </button>
+          </div>
+
         </div>
       </div>
     `;

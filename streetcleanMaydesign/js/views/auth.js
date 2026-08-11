@@ -11,6 +11,16 @@ window.AuthView = {
   selectedLoginRole: 'cleaner',
   selectedAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
 
+  // Step 2's fields live in this object so their values survive the
+  // full-view re-render that happens every time setStep() runs.
+  formData: {
+    name: '',
+    email: '',
+    password: 'password123',
+    barangay: 'Barangay Albay District, Legazpi City',
+    phone: '0917-555-1234'
+  },
+
   avatarPresets: [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
@@ -78,6 +88,10 @@ window.AuthView = {
   // 1. CREATE ACCOUNT VIEW (Registration with Role Selection First)
   // =========================================================================
   renderRegisterView() {
+    return this.renderRegister();
+  },
+
+  renderRegister() {
     return `
       <div class="card" style="padding: 1.5rem 1.25rem; background: #ffffff; border: 1px solid #bbf7d0; box-shadow: var(--shadow-sm);">
         
@@ -231,33 +245,41 @@ window.AuthView = {
 
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label" style="font-size: 0.75rem;">Full Name</label>
-          <input type="text" class="form-control" id="reg-name" placeholder="e.g. Christian Hernandez" value="Christian Hernandez" required />
+          <input type="text" class="form-control" id="reg-name" placeholder="e.g. Christian Hernandez" value="${this.formData.name}" required />
         </div>
 
         <div class="form-group" style="margin-bottom: 10px;">
-          <label class="form-label" style="font-size: 0.75rem;">Email Address (For Log In)</label>
-          <input type="email" class="form-control" id="reg-email" placeholder="e.g. christian@ibalong.ph" value="christian@ibalong.ph" required />
+          <label class="form-label" style="font-size: 0.75rem;">Email Address</label>
+          <input type="email" class="form-control" id="reg-email" placeholder="e.g. christian@example.com" value="${this.formData.email}" required />
         </div>
 
         <div class="form-group" style="margin-bottom: 10px;">
           <label class="form-label" style="font-size: 0.75rem;">Account Password</label>
-          <input type="password" class="form-control" id="reg-password" placeholder="At least 6 characters" value="password123" required />
+          <input type="password" class="form-control" id="reg-password" placeholder="At least 6 characters" value="${this.formData.password}" required />
         </div>
 
         <div class="form-group" style="margin-bottom: 14px;">
           <label class="form-label" style="font-size: 0.75rem;">Legazpi City Barangay</label>
           <select class="form-control" id="reg-barangay">
-            <option value="Barangay Albay District, Legazpi City">Barangay Albay District (Peñaranda Park)</option>
-            <option value="Barangay Bitano, Legazpi City">Barangay Bitano (Astrodome Complex)</option>
-            <option value="Barangay Puro, Legazpi City">Barangay Puro (Legazpi Boulevard)</option>
-            <option value="Barangay Victory Village, Legazpi City">Barangay Victory Village (Embarcadero)</option>
-            <option value="Barangay Cruzada, Legazpi City">Barangay Cruzada (Central District)</option>
+            <option value="Barangay Albay District, Legazpi City" ${this.formData.barangay === 'Barangay Albay District, Legazpi City' ? 'selected' : ''}>Barangay Albay District (Peñaranda Park)</option>
+            <option value="Barangay Bitano, Legazpi City" ${this.formData.barangay === 'Barangay Bitano, Legazpi City' ? 'selected' : ''}>Barangay Bitano (Astrodome Zone)</option>
+            <option value="Barangay Puro, Legazpi City" ${this.formData.barangay === 'Barangay Puro, Legazpi City' ? 'selected' : ''}>Barangay Puro (Legazpi Boulevard)</option>
+            <option value="Barangay Rawis, Legazpi City" ${this.formData.barangay === 'Barangay Rawis, Legazpi City' ? 'selected' : ''}>Barangay Rawis</option>
+            <option value="Barangay Bogtong, Legazpi City" ${this.formData.barangay === 'Barangay Bogtong, Legazpi City' ? 'selected' : ''}>Barangay Bogtong</option>
+            <option value="Barangay EM's Barrio, Legazpi City" ${this.formData.barangay === "Barangay EM's Barrio, Legazpi City" ? 'selected' : ''}>Barangay EM's Barrio</option>
+            <option value="Barangay Port District, Legazpi City" ${this.formData.barangay === 'Barangay Port District, Legazpi City' ? 'selected' : ''}>Barangay Port District (Embarcadero)</option>
+            <option value="Barangay Dap-dap, Legazpi City" ${this.formData.barangay === 'Barangay Dap-dap, Legazpi City' ? 'selected' : ''}>Barangay Dap-dap</option>
           </select>
         </div>
 
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-secondary btn-block" onclick="window.AuthView.setStep(1)">
-            Back
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" style="font-size: 0.75rem;">Mobile Phone (GCash / Maya)</label>
+          <input type="tel" class="form-control" id="reg-phone" placeholder="e.g. 0917-555-1234" value="${this.formData.phone}" required />
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 1.25rem;">
+          <button class="btn btn-secondary" style="flex: 1;" onclick="window.AuthView.setStep(1)">
+            <i class="fa-solid fa-arrow-left"></i> Back
           </button>
           <button class="btn btn-primary btn-block" onclick="window.AuthView.setStep(3)">
             Next: Payout Info <i class="fa-solid fa-arrow-right"></i>
@@ -511,6 +533,15 @@ window.AuthView = {
   },
 
   setStep(step) {
+    // If we're leaving step 2, its input fields are about to be destroyed
+    // by the re-render — grab their current values first so nothing is lost.
+    if (this.registerStep === 2) {
+      this.formData.name = document.getElementById('reg-name')?.value ?? this.formData.name;
+      this.formData.email = document.getElementById('reg-email')?.value ?? this.formData.email;
+      this.formData.password = document.getElementById('reg-password')?.value ?? this.formData.password;
+      this.formData.barangay = document.getElementById('reg-barangay')?.value ?? this.formData.barangay;
+      this.formData.phone = document.getElementById('reg-phone')?.value ?? this.formData.phone;
+    }
     this.registerStep = step;
     window.renderRoute();
   },
@@ -524,8 +555,7 @@ window.AuthView = {
     window.switchUser(userId);
     window.soundSystem.fanfare();
     window.showToast(`Logged in as ${role.toUpperCase()}!`, 'success');
-    
-    // Direct to appropriate role workspace
+
     if (role === 'cleaner') {
       window.location.hash = '#/commissions';
     } else if (role === 'resident') {
@@ -535,7 +565,7 @@ window.AuthView = {
     }
   },
 
-  handleCredentialLogin() {
+  async handleCredentialLogin() {
     const identifier = document.getElementById('login-identifier')?.value.trim();
     const password = document.getElementById('login-password')?.value.trim();
 
@@ -544,20 +574,21 @@ window.AuthView = {
       return;
     }
 
-    const res = window.appState.loginUser(identifier, password);
-    if (res.success) {
+    window.showToast('Signing in...', 'success');
+    const result = await window.appState.loginUser(identifier, password);
+    if (result.success) {
       window.soundSystem.fanfare();
-      window.showToast(`Welcome back, ${res.user.name}! (${res.user.role})`, 'success');
+      window.showToast(`Welcome back, ${result.user.name}! (${result.user.role})`, 'success');
       window.renderRoute();
-      if (res.user.role === 'cleaner') window.location.hash = '#/commissions';
-      else if (res.user.role === 'resident') window.location.hash = '#/report';
-      else if (res.user.role === 'verifier') window.location.hash = '#/verify';
+      if (result.user.role === 'cleaner') window.location.hash = '#/commissions';
+      else if (result.user.role === 'resident') window.location.hash = '#/report';
+      else if (result.user.role === 'verifier') window.location.hash = '#/verify';
     } else {
-      window.showToast(res.message, 'error');
+      window.showToast(result.message, 'error');
     }
   },
 
-  handleRegistrationSubmit() {
+  async handleRegistrationSubmit() {
     const name = document.getElementById('reg-name')?.value.trim();
     const email = document.getElementById('reg-email')?.value.trim();
     const password = document.getElementById('reg-password')?.value.trim() || 'password123';
@@ -571,7 +602,8 @@ window.AuthView = {
       return;
     }
 
-    const res = window.appState.registerUser({
+    window.showToast('Creating your account...', 'success');
+    const result = await window.appState.registerUser({
       name,
       email,
       password,
@@ -583,17 +615,26 @@ window.AuthView = {
       avatar: this.selectedAvatar
     });
 
-    if (res.success) {
+    if (result.success) {
       window.soundSystem.fanfare();
       window.showToast(`Account created as ${this.selectedRegisterRole.toUpperCase()}! Welcome to Ibalong 2026.`, 'gold');
       this.activeTab = 'register';
       this.registerStep = 1;
+      this.formData = { name: '', email: '', password: 'password123', barangay: 'Barangay Albay District, Legazpi City', phone: '0917-555-1234' };
       window.renderRoute();
-      if (res.user.role === 'cleaner') window.location.hash = '#/commissions';
-      else if (res.user.role === 'resident') window.location.hash = '#/report';
-      else if (res.user.role === 'verifier') window.location.hash = '#/verify';
+      if (result.user.role === 'cleaner') window.location.hash = '#/commissions';
+      else if (result.user.role === 'resident') window.location.hash = '#/report';
+      else if (result.user.role === 'verifier') window.location.hash = '#/verify';
     } else {
-      window.showToast(res.message, 'error');
+      window.showToast(result.message, 'error');
     }
+  },
+
+  async createRealAccount() {
+    return this.handleRegistrationSubmit();
+  },
+
+  createAccount() {
+    this.handleRegistrationSubmit();
   }
 };
