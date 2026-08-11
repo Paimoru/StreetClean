@@ -1,21 +1,19 @@
-/* ==========================================================================
-   StreetClean — shared UI helpers (app.js)
-   Renders the header + bottom nav into every page, so you only edit
-   the nav in ONE place. Include this after db.js on every page.
-   ========================================================================== */
+/* StreetClean shared UI */
 
 const NAV_ITEMS = [
   { href: "index.html", label: "Home", icon: "🏠", key: "home" },
-  { href: "report.html", label: "Report", icon: "📍", key: "report" },
-  { href: "commissions.html", label: "Browse", icon: "🧹", key: "commissions" },
-  { href: "my-tasks.html", label: "My Tasks", icon: "✅", key: "mytasks" },
-  { href: "verify.html", label: "Verify", icon: "🔎", key: "verify" },
-  { href: "wallet.html", label: "Wallet", icon: "💰", key: "wallet" },
+  { href: "report.html", label: "Report", icon: "📍", key: "report", role: "resident" },
+  { href: "commissions.html", label: "Browse", icon: "🧹", key: "commissions", role: "cleaner" },
+  { href: "my-tasks.html", label: "My Tasks", icon: "✅", key: "mytasks", role: "cleaner" },
+  { href: "verify.html", label: "Verify", icon: "🔎", key: "verify", role: "verifier" },
+  { href: "wallet.html", label: "Wallet", icon: "💰", key: "wallet", role: "cleaner" }
 ];
 
-function renderShell(activeKey) {
+function renderShell(activeKey, session) {
   const headerEl = document.getElementById("app-header");
   const navEl = document.getElementById("app-nav");
+  const role = session?.profile?.role || "resident";
+  const name = session?.profile?.name || session?.user?.displayName || session?.user?.email || "User";
 
   if (headerEl) {
     headerEl.innerHTML = `
@@ -26,30 +24,48 @@ function renderShell(activeKey) {
         </svg>
         StreetClean
       </a>
-      <div class="role-picker">
-        <select id="role-select" aria-label="Switch role view">
-          <option value="cleaner">View as: Cleaner</option>
-          <option value="resident">View as: Resident</option>
-          <option value="verifier">View as: Verifier</option>
-        </select>
+      <div class="account-menu">
+        <span class="account-name">${escapeHtml(name)}</span>
+        <button class="header-logout" id="logout-btn">Log out</button>
       </div>
     `;
-    const roleSelect = document.getElementById("role-select");
-    roleSelect.value = DB.getRole();
-    roleSelect.addEventListener("change", (e) => {
-      DB.setRole(e.target.value);
-      showToast("Now viewing as " + e.target.options[e.target.selectedIndex].text.replace("View as: ", ""));
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await AuthModule.logoutUser();
+      window.location.href = "index.html";
     });
   }
 
   if (navEl) {
-    navEl.innerHTML = NAV_ITEMS.map(
-      (item) => `
+    navEl.innerHTML = NAV_ITEMS
+      .filter((item) => !item.role || item.role === role || item.key === "home")
+      .map((item) => `
         <a href="${item.href}" class="${item.key === activeKey ? "active" : ""}">
           <span class="icon">${item.icon}</span>${item.label}
-        </a>`
-    ).join("");
+        </a>
+      `).join("");
   }
+}
+
+async function startPage(activeKey, callback, allowedRoles = null) {
+  const session = allowedRoles
+    ? await AuthModule.requireRole(allowedRoles)
+    : await AuthModule.requireAuth();
+
+  if (!session) return;
+
+  renderShell(activeKey, session);
+  await DB.ensureSeedData();
+  await callback(session);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function showToast(message) {
@@ -66,7 +82,7 @@ function showToast(message) {
 }
 
 function timeAgo(ts) {
-  const mins = Math.floor((Date.now() - ts) / 60000);
+  const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
   if (mins < 60) return mins + "m ago";
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return hrs + "h ago";
@@ -78,17 +94,33 @@ function badgeFor(status) {
     open: ["badge-open", "Open"],
     claimed: ["badge-claimed", "Claimed"],
     pending_verification: ["badge-pending", "Pending review"],
-    verified: ["badge-verified", "Verified & Paid"],
+    verified: ["badge-verified", "Verified & Paid"]
   };
   const [cls, label] = map[status] || ["badge-open", status];
   return `<span class="badge ${cls}">${label}</span>`;
 }
 
-// Reads a <input type="file"> image and hands back a base64 data URL
+/* Compress images before saving them into Firestore.
+   This avoids needing Firebase Storage for the prototype. */
 function readImageAsDataURL(fileInput, callback) {
   const file = fileInput.files && fileInput.files[0];
   if (!file) return callback(null);
+
   const reader = new FileReader();
-  reader.onload = (e) => callback(e.target.result);
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSize = 700;
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      callback(canvas.toDataURL("image/jpeg", 0.62));
+    };
+    img.src = e.target.result;
+  };
   reader.readAsDataURL(file);
 }

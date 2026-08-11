@@ -21,13 +21,16 @@
   <nav class="bottom-nav" id="app-nav"></nav>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/db.js"></script>
 <script src="js/app.js"></script>
 <script>
-  renderShell("verify");
-
-  function render() {
-    const tasks = DB.getPendingVerification();
+  async function render() {
+    const tasks = await DB.getPendingVerification();
     const list = document.getElementById("list");
 
     if (tasks.length === 0) {
@@ -39,7 +42,7 @@
       .map(
         (t) => `
       <div class="card">
-        <div class="task-title" style="margin-bottom:10px;">${t.title}</div>
+        <div class="task-title" style="margin-bottom:10px;">${escapeHtml(t.title)}</div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
           <div>
             <label style="margin-bottom:4px;">Before</label>
@@ -63,13 +66,17 @@
       .join("");
   }
 
-  function verify(id) {
-    DB.verifyAndPay(id);
-    showToast("Verified — payment released 🎉");
-    render();
+  async function verify(id) {
+    try {
+      await DB.verifyAndPay(id);
+      showToast("Verified — payment released 🎉");
+      await render();
+    } catch (err) {
+      showToast(err.message || "Could not verify this cleanup.");
+    }
   }
 
-  render();
+  startPage("verify", render, ["verifier"]);
 </script>
 </body>
 </html>

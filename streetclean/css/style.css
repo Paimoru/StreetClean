@@ -435,3 +435,38 @@ input[type="file"] {
   main { padding: 16px 14px 100px; }
   .stat .num { font-size: 18px; }
 }
+
+
+/* ---------- Account header ---------- */
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.account-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.header-logout {
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 10px 0 0;
+}

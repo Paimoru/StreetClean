@@ -1,29 +1,31 @@
 # StreetClean — Prototype Setup
 
-## Run it right now (zero setup)
+## Run it
 
-This is plain HTML/CSS/JS. No build step, no npm install.
+This version uses Firebase Authentication + Firestore, so accounts and user activity are shared across browsers instead of being tied to one laptop.
 
 1. Open the `streetclean` folder in VS Code.
-2. Install the **Live Server** extension (if you don't have it).
-3. Right-click `index.html` → **Open with Live Server**.
+2. Make sure the Firebase project in `js/firebase-config.js` has **Authentication → Email/Password** enabled.
+3. Make sure **Firestore Database** is enabled.
+4. Publish `firestore.rules` to the Firebase project.
+5. Install the **Live Server** extension if you don't have it.
+6. Right-click `index.html` → **Open with Live Server**.
 
-That's it. The app works fully offline using your browser's `localStorage`
-as a stand-in database, pre-loaded with 4 sample reports.
+The first authenticated visitor creates the four fixed demo reports in Firestore. They are demo fixtures, not activity belonging to a real account.
 
-## What's already working
+## What's working
 
-- **Home** — dashboard feed + live stats
-- **Report** — submit a new litter report with photo + bounty → becomes an open commission instantly
-- **Browse** — claim an open commission
-- **My Tasks** — upload an after-photo to send a claimed task for verification
-- **Verify** — compare before/after photos, verify, release payment
-- **Wallet** — running balance + transaction history
+- **Home** — login form is shown directly on the main webpage when logged out
+- **Registration/Login** — Firebase Authentication accounts
+- **Report** — reports are saved with the reporter's Firebase UID
+- **Browse** — claims are saved with the cleaner's Firebase UID
+- **My Tasks** — only shows tasks claimed by the logged-in cleaner
+- **Verify** — only verifiers can approve pending cleanups
+- **Wallet** — only shows transactions belonging to the logged-in cleaner
+- **Logout** — signs out the current Firebase account
+- **Account-specific data** — user actions are associated with `uid`, not the word `You`
 
-The role switcher in the header (Resident / Cleaner / Verifier) is currently
-just a label for the demo narrative — it doesn't restrict what you can click.
-That's fine for a hackathon demo: it lets you tell the story of switching
-roles without needing real auth.
+The old role switcher was removed. A user's role now comes from their account profile.
 
 ## Where everything lives
 
@@ -45,7 +47,7 @@ then reads/writes data only through `DB.xxx()` functions. **Nobody should touch
 `localStorage` directly outside of `db.js`** — that's what makes the Firebase
 swap on Day 2 painless.
 
-## Day 2: swapping in Firebase
+## Firebase data model
 
 1. Create a Firebase project → enable **Firestore** and **Storage**.
 2. Add the Firebase SDK `<script>` tags + your config to each page (or a shared `firebase-init.js`).
