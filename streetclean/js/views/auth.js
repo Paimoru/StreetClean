@@ -71,7 +71,7 @@ window.AuthView = {
         <form onsubmit="event.preventDefault(); window.AuthView.handleLogin();">
           <div class="form-group">
             <label class="form-label">Email or Mobile Number</label>
-            <input type="text" class="form-control" id="login-identifier" placeholder="e.g. maria@clean.ph or 09285513941" value="${currentUser.email}" required />
+            <input type="text" class="form-control" id="login-identifier" placeholder="e.g. maria@clean.ph or 09285513941" value="${currentUser ? currentUser.email : ''}" required />
           </div>
 
           <div class="form-group">
@@ -95,7 +95,7 @@ window.AuthView = {
 
           <div style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;">
             ${allUsers.map(u => `
-              <div class="card ${currentUser.id === u.id ? 'card-gold-glow' : ''}" style="padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0;" onclick="window.switchUser('${u.id}')">
+              <div class="card ${currentUser && currentUser.id === u.id ? 'card-gold-glow' : ''}" style="padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0;" onclick="window.switchUser('${u.id}')">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <img src="${u.avatar}" style="width: 38px; height: 38px; border-radius: var(--radius-full); object-fit: cover; border: 2px solid ${u.role === 'cleaner' ? 'var(--emerald-500)' : (u.role === 'resident' ? '#0ea5e9' : 'var(--gold-500)')};" />
                   <div>
@@ -105,7 +105,7 @@ window.AuthView = {
                     </div>
                   </div>
                 </div>
-                ${currentUser.id === u.id ? '<span class="status-badge status-completed"><i class="fa-solid fa-check"></i> Active</span>' : '<button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.72rem;">Switch</button>'}
+                ${currentUser && currentUser.id === u.id ? '<span class="status-badge status-completed"><i class="fa-solid fa-check"></i> Active</span>' : '<button class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.72rem;">Switch</button>'}
               </div>
             `).join('')}
           </div>
